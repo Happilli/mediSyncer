@@ -1,0 +1,35 @@
+# python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# env
+.env
+
+# database
+*.db
+*.sqlite3
+
+# alembic (keep migrations but ignore cache)
+migrations/__pycache__/
+migrations/versions/__pycache__/
+
+# ide
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# os
+.DS_Store
+Thumbs.db
+
+# uploads/builds (apk storage later)
+public/
+builds/
