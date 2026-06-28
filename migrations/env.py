@@ -16,7 +16,7 @@ DB_NAME = os.getenv("DB_NAME")
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-from models import Users
+from models import Doctors, Hospitals, Patients, Users
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
