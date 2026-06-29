@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
+from sqlmodel import Column, DateTime, Field, ForeignKey, Integer, SQLModel, func
 
 
 class Consultations(SQLModel, table=True):
@@ -17,10 +17,12 @@ class Consultations(SQLModel, table=True):
     )
     complaint: str
     symptoms: str
-    diagonosis: str
+    diagnosis: str
     notes: Optional[str] = Field(default=None)
     blood_pressure: Optional[str] = Field(default=None)
     heart_rate: Optional[str] = Field(default=None)
     temperature: Optional[str] = Field(default=None)
     weight: Optional[str] = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )

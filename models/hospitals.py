@@ -15,4 +15,4 @@ class Hospitals(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
     image_url: Optional[str] = Field(default=None)
     is_active: bool = Field(default=False)
-    registration_number: str
+    registration_number: str = Field(unique=True, index=True)

@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
+from sqlalchemy import DateTime
+from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel, func
 
 
 class Prescriptions(SQLModel, table=True):
@@ -18,5 +19,9 @@ class Prescriptions(SQLModel, table=True):
 
     diagnosis: str
     instructions: str
-    created_at: datetime = Field(default_factory=datetime.now)
-    follow_up_date: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )
+    follow_up_date: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+    )

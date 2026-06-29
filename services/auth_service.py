@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from models.patients import BloodGroup, Gender, Patients
+from models.patients import Patients
 from models.users import UserRole, Users
 from schemas.patient import PatientRegister
 from utils.security import create_access_token, hash_password, verify_password
@@ -20,7 +20,9 @@ def register_patient(data: PatientRegister, session: Session):
     session.add(user)
     session.commit()
     session.refresh(user)
-    assert user.id is not None
+
+    if user.id is None:
+        raise HTTPException(status_code=500, detail="User ID generation failed")
 
     patient = Patients(
         user_id=user.id,
@@ -28,13 +30,14 @@ def register_patient(data: PatientRegister, session: Session):
         phone=data.phone,
         address=data.address,
         date_of_birth=data.date_of_birth,
-        gender=Gender(data.gender.lower()),
-        blood_group=BloodGroup(data.blood_group.upper()),
+        gender=data.gender,
+        blood_group=data.blood_group,
         emergency_contact=data.emergency_contact,
     )
     session.add(patient)
     session.commit()
     session.refresh(patient)
+
     return {
         "message": f"{patient.name} registered",
         "remarks": "You will be able to fully use after verfying this id through citizenship",
@@ -51,7 +54,7 @@ def login_user(email: str, password: str, session: Session):
         raise HTTPException(status_code=403, detail="Account is not active")
 
     token = create_access_token(
-        data={"sub": str(user.id), "role": user.role, "email": user.email}
+        data={"sub": str(user.id), "role": user.role.value, "email": user.email}
     )
     return {
         "access_token": token,

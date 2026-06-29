@@ -27,5 +27,5 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(
         to_encode,
         os.getenv("SECRET_KEY"),  # type: ignore
-        algorithm=os.getenv(("ALGORITHM")),  # type: ignore
+        algorithm=os.getenv("ALGORITHM"),  # type: ignore
     )
