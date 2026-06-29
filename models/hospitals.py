@@ -1,11 +1,14 @@
 from typing import Optional
-from sqlmodel import Field, SQLModel
+
+from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
 
 
 class Hospitals(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id : int = Field(foreign_key="users.id")
-    name: str 
+    user_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    )
+    name: str
     address: str
     phone: str
     website: Optional[str] = Field(default=None)

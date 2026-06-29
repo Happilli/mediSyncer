@@ -1,11 +1,16 @@
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
 
 
 class Doctors(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id")
+    user_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    )
+    hospital_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("hospitals.id", ondelete="CASCADE"))
+    )
     name: str
     phone: str
     department: str
@@ -15,4 +20,3 @@ class Doctors(SQLModel, table=True):
     years_experience: Optional[int] = Field(default=None)
     license_number: str
     profile_pic_url: Optional[str] = Field(default=None)
-
