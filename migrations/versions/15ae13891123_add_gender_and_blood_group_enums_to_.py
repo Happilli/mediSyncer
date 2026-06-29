@@ -1,8 +1,8 @@
-"""add all models
+"""add gender and blood group enums to patients
 
-Revision ID: 3108cd8a5605
+Revision ID: 15ae13891123
 Revises: 
-Create Date: 2026-06-29 14:22:15.355872
+Create Date: 2026-06-29 18:44:33.978929
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3108cd8a5605'
+revision: str = '15ae13891123'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -53,11 +53,14 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('address', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('date_of_birth', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('gender', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('blood_group', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('date_of_birth', sa.Date(), nullable=False),
+    sa.Column('gender', sa.Enum('male', 'female', 'other', name='gender'), nullable=False),
+    sa.Column('blood_group', sa.Enum('a_pos', 'a_neg', 'b_pos', 'b_neg', 'ab_pos', 'ab_neg', 'o_pos', 'o_neg', name='bloodgroup'), nullable=False),
     sa.Column('emergency_contact', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('profile_pic_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('citizenship_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('citizenship_photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -72,7 +75,9 @@ def upgrade() -> None:
     sa.Column('bio', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('address', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('years_experience', sa.Integer(), nullable=True),
-    sa.Column('license_number', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('license_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('license_photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.Column('profile_pic_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.ForeignKeyConstraint(['hospital_id'], ['hospitals.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
