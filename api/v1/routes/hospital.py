@@ -10,7 +10,7 @@ router = APIRouter(prefix="/hospitals", tags=["hospitals"])
 
 
 @router.post("/register", status_code=201)
-def register_hospita(
+def register_new_hospital(
     data: HospitalRegister,
     session: Session = Depends(get_session),
     _: None = Depends(require_admin),

@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from database import get_session
+from models.doctors import Doctors
 from models.users import UserRole, Users
 
 bearer = HTTPBearer()
@@ -65,3 +66,20 @@ def require_hospital(current_user: Users = Depends(get_current_user)) -> Users:
     if current_user.role != UserRole.hospital:
         raise HTTPException(status_code=403, detail="hospital access required..")
     return current_user
+
+
+def required_verified_doctor(
+    current_user: Users = Depends(require_doctor),
+    session: Session = Depends(get_session),
+) -> Doctors:
+    doctor = session.exec(
+        select(Doctors).where(Doctors.user_id == current_user.id)
+    ).first()
+    if doctor is None:
+        raise HTTPException(status_code=404, detail="Doctor profile is not found..")
+    if not doctor.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="We assure your hospital has done good in their part, now wait until real admin verfies this account..",
+        )
+    return doctor

@@ -4,9 +4,9 @@ from models.users import Users
 from utils.dependencies import (
     get_current_user,
     require_admin,
-    require_doctor,
     require_hospital,
     require_patient,
+    required_verified_doctor,
 )
 
 router = APIRouter(prefix="/test", tags=["test"])
@@ -28,7 +28,7 @@ def patient_only(current_user: Users = Depends(require_patient)):
 
 
 @router.get("/doctor")
-def doctor_only(current_user: Users = Depends(require_doctor)):
+def doctor_only(current_user: Users = Depends(required_verified_doctor)):
     return {"message": "doctor access ok", "user": current_user.email}
 
 
