@@ -1,7 +1,15 @@
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Optional
 
 from sqlmodel import Column, DateTime, Field, ForeignKey, Integer, SQLModel, func
+
+
+class AppointmentStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    cancelled = "cancelled"
+    completed = "completed"
 
 
 class Appointments(SQLModel, table=True):
@@ -17,7 +25,7 @@ class Appointments(SQLModel, table=True):
     )
     appointment_at: datetime
 
-    status: str = Field(default="pending")
+    status: AppointmentStatus = Field(default=AppointmentStatus.pending)
     notes: Optional[str] = Field(default=None)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

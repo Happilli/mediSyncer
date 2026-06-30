@@ -2,10 +2,16 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from models.appointments import AppointmentStatus
+
 
 class AppointmentCreate(BaseModel):
     timeslot_id: int
     notes: str | None = None
+
+
+class AppointmentStatusUpdate(BaseModel):
+    status: AppointmentStatus
 
 
 class AppointmentOut(BaseModel):
@@ -14,7 +20,7 @@ class AppointmentOut(BaseModel):
     patient_id: int
     hospital_id: int
     appointment_at: datetime
-    status: str
+    status: AppointmentStatus
     notes: str | None = None
 
     class Config:

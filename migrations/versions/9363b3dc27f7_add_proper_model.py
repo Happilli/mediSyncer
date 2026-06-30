@@ -1,8 +1,8 @@
-"""models all / proper
+"""add proper model
 
-Revision ID: f2700c3ac465
+Revision ID: 9363b3dc27f7
 Revises: 
-Create Date: 2026-06-30 00:17:22.716748
+Create Date: 2026-07-01 00:23:20.849229
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f2700c3ac465'
+revision: str = '9363b3dc27f7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -90,7 +90,7 @@ def upgrade() -> None:
     sa.Column('patient_id', sa.Integer(), nullable=True),
     sa.Column('hospital_id', sa.Integer(), nullable=True),
     sa.Column('appointment_at', sa.DateTime(), nullable=False),
-    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'confirmed', 'cancelled', 'completed', name='appointmentstatus'), nullable=False),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['doctor_id'], ['doctors.id'], ondelete='CASCADE'),
