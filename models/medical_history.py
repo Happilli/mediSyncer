@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Column, DateTime, Field, ForeignKey, Integer, SQLModel, func
@@ -15,5 +15,6 @@ class Medical_History(SQLModel, table=True):
     title: str
     description: str
     date: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )

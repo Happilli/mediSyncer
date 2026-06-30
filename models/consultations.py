@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Column, DateTime, Field, ForeignKey, Integer, SQLModel, func
@@ -24,5 +24,6 @@ class Consultations(SQLModel, table=True):
     temperature: Optional[str] = Field(default=None)
     weight: Optional[str] = Field(default=None)
     created_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=Column(DateTime(timezone=True), server_default=func.now()),
     )

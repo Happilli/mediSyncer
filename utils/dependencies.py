@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from database import get_session
 from models.doctors import Doctors
+from models.patients import Patients
 from models.users import UserRole, Users
 
 bearer = HTTPBearer()
@@ -83,3 +84,22 @@ def required_verified_doctor(
             detail="We assure your hospital has done good in their part, now wait until real admin verfies this account..",
         )
     return doctor
+
+
+def required_verified_patient(
+    current_user: Users = Depends(require_patient),
+    session: Session = Depends(get_session),
+) -> Patients:
+
+    patient = session.exec(
+        select(Patients).where(Patients.user_id == current_user.id)
+    ).first()
+
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient profile is not found..")
+    if not patient.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="We assure you have done everything right but  now wait until real admin verfies this account if your citizenship is actually is submitted ofcourse..",
+        )
+    return patient

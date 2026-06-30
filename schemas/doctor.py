@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -27,6 +29,21 @@ class DoctorOut(BaseModel):
     years_experience: int | None = None
     is_verified: bool
     profile_pic_url: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class TimeSlotCreate(BaseModel):
+    appointment_at: datetime
+
+
+class TimeSlotOut(BaseModel):
+    id: int
+    doctor_id: int
+    hospital_id: int
+    appointment_at: datetime
+    is_available: bool
 
     class Config:
         from_attributes = True

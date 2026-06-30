@@ -1,12 +1,12 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
-from starlette.types import HTTPExceptionHandler
 
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
 from models.hospitals import Hospitals
+from models.timeslots import Timeslots
 from models.users import UserRole, Users
-from schemas.doctor import DoctorRegister
+from schemas.doctor import DoctorRegister, TimeSlotCreate
 from utils.security import hash_password
 
 
@@ -109,3 +109,43 @@ def verify_doctor(doctor_id: int, session: Session):
     session.commit()
     session.refresh(doctor)
     return {"message": f"{doctor.name} has been verified!"}
+
+
+def create_timeslot(data: TimeSlotCreate, doctor: Doctors, session: Session):
+    existing = session.exec(
+        select(Timeslots).where(
+            Timeslots.doctor_id == doctor.id,
+            Timeslots.appointment_at == data.appointment_at,
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="Timeslot already exists for this time"
+        )
+
+    if doctor.id is None:
+        raise HTTPException(status_code=500, detail="Doctor id cant be generated")
+
+    slot = Timeslots(
+        doctor_id=doctor.id,
+        hospital_id=doctor.hospital_id,
+        appointment_at=data.appointment_at,
+        is_available=True,
+    )
+    session.add(slot)
+    session.commit()
+    session.refresh(slot)
+
+    return slot
+
+
+def list_doctor_timeslots(
+    doctor_id: int, session: Session, available_only: bool = True
+):
+    query = select(Timeslots).where(Timeslots.doctor_id == doctor_id)
+
+    if available_only:
+        query = query.where(Timeslots.is_available == True)
+
+    query = query.order_by(Timeslots.appointment_at)
+    return session.exec(query).all()

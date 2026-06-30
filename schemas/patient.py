@@ -29,3 +29,20 @@ class PatientRegister(BaseModel):
         if isinstance(v, str):
             return v.strip().upper()
         return v
+
+
+class PatientOut(BaseModel):
+    id: int
+    name: str
+    phone: str
+    address: str
+    date_of_birth: date
+    gender: Gender
+    blood_group: BloodGroup
+    emergency_contact: str
+    citizenship_number: str | None = None
+    citizenship_photo_url: str | None = None
+    is_verified: bool
+
+    class Config:
+        from_attributes = True
