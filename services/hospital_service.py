@@ -50,3 +50,17 @@ def register_hospital(data: HospitalRegister, session: Session):
     return {
         "message": f"{hospital.name} registered!!",
     }
+
+
+def list_hospitals(session: Session, search: str | None = None):
+    query = select(Hospitals).where(Hospitals.is_active == True)
+    if search:
+        query = query.where(Hospitals.name.like(f"%{search}%"))
+    return session.exec(query).all()
+
+
+def get_hospital(hospital_id: int, session: Session):
+    hospital = session.get(Hospitals, hospital_id)
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found..")
+    return hospital

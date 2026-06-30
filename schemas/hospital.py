@@ -10,3 +10,18 @@ class HospitalRegister(BaseModel):
     registration_number: str
     website: str | None = None
     description: str | None = None
+
+
+class HospitalOut(BaseModel):
+    id: int
+    name: str
+    address: str
+    phone: str
+    website: str | None = None
+    description: str | None = None
+    image_url: str | None = None
+    is_active: bool
+    registration_number: str
+
+    class Config:
+        from_attributes = True

@@ -65,3 +65,31 @@ def register_doctor(data: DoctorRegister, session: Session, current_hospital: Us
     session.commit()
 
     return {"message": f"{doctor.name} has been registered!"}
+
+
+def list_doctors(
+    session: Session,
+    hospital_id: int | None = None,
+    department: str | None = None,
+    speciality: str | None = None,
+    search: str | None = None,
+):
+    query = select(Doctors).where(Doctors.is_verified == True)
+    if hospital_id is not None:
+        query = query.where(Doctors.hospital_id == hospital_id)
+    if department:
+        query = query.where(Doctors.department == department)
+    if speciality:
+        query = query.where(Doctors.speciality == speciality)
+    if search:
+        query = query.where(Doctors.name.like(f"%{search}%"))
+    return session.exec(query).all()
+
+
+def get_doctor(doctor_id: int, session: Session):
+    doctor = session.exec(
+        select(Doctors).where(Doctors.id == doctor_id, Doctors.is_verified == True)
+    ).first()
+    if doctor is None:
+        raise HTTPException(status_code=404, detail="Doctor not found..")
+    return doctor
