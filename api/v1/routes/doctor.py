@@ -5,12 +5,13 @@ from database import get_session
 from models.users import Users
 from schemas.doctor import DoctorOut, DoctorRegister
 from services.doctor_service import (
-    DoctorRegister,
     get_doctor,
     list_doctors,
+    list_unverified_doctors,
     register_doctor,
+    verify_doctor,
 )
-from utils.dependencies import require_hospital
+from utils.dependencies import require_admin, require_hospital
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
@@ -38,3 +39,19 @@ def get_doctors(
 @router.get("/{doctor_id}", response_model=DoctorOut)
 def get_doctor_detail(doctor_id: int, session: Session = Depends(get_session)):
     return get_doctor(doctor_id, session)
+
+
+@router.get("/pending", response_model=list[DoctorOut])
+def get_pending_doctors(
+    session: Session = Depends(get_session), _: Users = Depends(require_admin)
+):
+    return list_unverified_doctors(session)
+
+
+@router.patch("/{doctor_id}/verify")
+def verify_doctor_route(
+    doctor_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return verify_doctor(doctor_id, session)

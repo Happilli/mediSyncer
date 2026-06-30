@@ -21,6 +21,7 @@ class DoctorOut(BaseModel):
     name: str
     phone: str
     department: str
+    speciality: str
     bio: str | None = None
     address: str
     years_experience: int | None = None

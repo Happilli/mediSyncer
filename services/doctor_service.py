@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
+from starlette.types import HTTPExceptionHandler
 
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
@@ -93,3 +94,18 @@ def get_doctor(doctor_id: int, session: Session):
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found..")
     return doctor
+
+
+def list_unverified_doctors(session: Session):
+    return session.exec(select(Doctors).where(Doctors.is_verified == False)).all()
+
+
+def verify_doctor(doctor_id: int, session: Session):
+    doctor = session.get(Doctors, doctor_id)
+    if doctor is None:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    doctor.is_verified = True
+    session.add(doctor)
+    session.commit()
+    session.refresh(doctor)
+    return {"message": f"{doctor.name} has been verified!"}
