@@ -83,10 +83,10 @@ def update_appointment_status(
     appt = session.get(Appointments, appointment_id)
     if appt is None:
         raise HTTPException(status_code=404, detail="Appointment not found..")
-    if appt.status == AppointmentStatus.cancelled:
+    if appt.status in (AppointmentStatus.cancelled, AppointmentStatus.completed):
         raise HTTPException(
             status_code=400,
-            detail="This appointment has been cancelled and cannot be modified.",
+            detail=f"This appointment has been {appt.status.value} and cannot be modified.",
         )
     if current_doctor is not None:
         if appt.doctor_id != current_doctor.id:

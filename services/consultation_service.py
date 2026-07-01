@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
+from models.medical_history import Medical_History
 from schemas.consultation import ConsultationCreate
 
 
@@ -45,6 +46,21 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
     session.add(consultation)
     session.commit()
     session.refresh(consultation)
+
+    ## latching
+    desp = [f"Complaint:{data.complaint}", f"Symptoms: {data.symptoms}"]
+    if data.notes:
+        desp.append(f"Notes:{data.notes}")
+
+    history_entry = Medical_History(
+        doctor_id=doctor.id,
+        patient_id=appt.patient_id,
+        title=data.diagnosis,
+        description="|".join(desp),
+    )
+    session.add(history_entry)
+    session.commit()
+
     return consultation
 
 
