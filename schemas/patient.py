@@ -46,3 +46,26 @@ class PatientOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PatientUpdate(BaseModel):
+    name: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    emergency_contact: str | None = None
+    profile_pic_url: str | None = None
+    citizenship_number: str | None = None
+    citizenship_photo_url: str | None = None
+
+
+class PatientPublicOut(BaseModel):
+    id: int
+    name: str
+    phone: str
+    gender: Gender
+    blood_group: BloodGroup
+    emergency_contact: str
+    profile_pic_url: str | None = None
+
+    class Config:
+        from_attributes = True

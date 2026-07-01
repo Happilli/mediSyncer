@@ -1,12 +1,16 @@
+from datetime import datetime, timezone
+
+from annotated_types import doc
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from models.appointments import Appointments
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
-from schemas.doctor import DoctorRegister, TimeSlotCreate
+from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
 from utils.security import hash_password
 
 
@@ -149,3 +153,39 @@ def list_doctor_timeslots(
 
     query = query.order_by(Timeslots.appointment_at)
     return session.exec(query).all()
+
+
+def get_my_profile(doctor: Doctors, session: Session):
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    total_patients = session.exec(
+        select(Appointments.patient_id)
+        .where(Appointments.doctor_id == doctor.id)
+        .distinct()
+    ).all()
+
+    patients_this_month = session.exec(
+        select(Appointments.patient_id)
+        .where(
+            Appointments.doctor_id == doctor.id,
+            Appointments.appointment_at >= month_start,
+        )
+        .distinct()
+    ).all()
+
+    return {
+        **doctor.model_dump(),
+        "patients_this_month": len(patients_this_month),
+        "total_patients": len(total_patients),
+    }
+
+
+def update_doctor_profile(doctor: Doctors, data: DoctorUpdate, session: Session):
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(doctor, key, value)
+    session.add(doctor)
+    session.commit()
+    session.refresh(doctor)
+    return doctor

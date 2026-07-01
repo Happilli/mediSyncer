@@ -103,3 +103,28 @@ def required_verified_patient(
             detail="We assure you have done everything right but  now wait until real admin verfies this account if your citizenship is actually is submitted ofcourse..",
         )
     return patient
+
+
+# unverified allowed [for modification of userprofile/doctorprofile]
+def get_own_patient_profile(
+    current_user: Users = Depends(require_patient),
+    session: Session = Depends(get_session),
+) -> Patients:
+    patient = session.exec(
+        select(Patients).where(Patients.user_id == current_user.id)
+    ).first()
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient profile is not found..")
+    return patient
+
+
+def get_own_doctor_profile(
+    current_user: Users = Depends(require_doctor),
+    session: Session = Depends(get_session),
+) -> Doctors:
+    doctor = session.exec(
+        select(Doctors).where(Doctors.user_id == current_user.id)
+    ).first()
+    if doctor is None:
+        raise HTTPException(status_code=404, detail="Doctor profile is not found..")
+    return doctor

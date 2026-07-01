@@ -4,17 +4,32 @@ from sqlmodel import Session
 from database import get_session
 from models.doctors import Doctors
 from models.users import Users
-from schemas.doctor import DoctorOut, DoctorRegister, TimeSlotCreate, TimeSlotOut
+from schemas.doctor import (
+    DoctorAdminOut,
+    DoctorOut,
+    DoctorProfileOut,
+    DoctorRegister,
+    DoctorUpdate,
+    TimeSlotCreate,
+    TimeSlotOut,
+)
 from services.doctor_service import (
     create_timeslot,
     get_doctor,
+    get_my_profile,
     list_doctor_timeslots,
     list_doctors,
     list_unverified_doctors,
     register_doctor,
+    update_doctor_profile,
     verify_doctor,
 )
-from utils.dependencies import require_admin, require_hospital, required_verified_doctor
+from utils.dependencies import (
+    get_own_doctor_profile,
+    require_admin,
+    require_hospital,
+    required_verified_doctor,
+)
 
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
@@ -39,7 +54,7 @@ def get_doctors(
     return list_doctors(session, hospital_id, department, speciality, search)
 
 
-@router.get("/pending", response_model=list[DoctorOut])
+@router.get("/pending", response_model=list[DoctorAdminOut])
 def get_pending_doctors(
     session: Session = Depends(get_session), _: Users = Depends(require_admin)
 ):
@@ -55,9 +70,21 @@ def verify_doctor_route(
     return verify_doctor(doctor_id, session)
 
 
-@router.get("/{doctor_id}", response_model=DoctorOut)
-def get_doctor_detail(doctor_id: int, session: Session = Depends(get_session)):
-    return get_doctor(doctor_id, session)
+@router.get("/me", response_model=DoctorProfileOut)
+def my_doctor_profile(
+    doctor: Doctors = Depends(get_own_doctor_profile),
+    session: Session = Depends(get_session),
+):
+    return get_my_profile(doctor, session)
+
+
+@router.patch("/me", response_model=DoctorOut)
+def update_my_doctor_profile(
+    data: DoctorUpdate,
+    session: Session = Depends(get_session),
+    doctor: Doctors = Depends(get_own_doctor_profile),
+):
+    return update_doctor_profile(doctor, data, session)
 
 
 @router.post("/me/timeslots", status_code=201, response_model=TimeSlotOut)
@@ -67,6 +94,11 @@ def add_timeslot(
     doctor: Doctors = Depends(required_verified_doctor),
 ):
     return create_timeslot(data, doctor, session)
+
+
+@router.get("/{doctor_id}", response_model=DoctorOut)
+def get_doctor_detail(doctor_id: int, session: Session = Depends(get_session)):
+    return get_doctor(doctor_id, session)
 
 
 @router.get("/{doctor_id}/timeslots", response_model=list[TimeSlotOut])
