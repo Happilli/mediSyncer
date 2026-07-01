@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from models.appointments import Appointments, AppointmentStatus
 from models.patients import Patients
 from schemas.patient import PatientUpdate
 
@@ -29,3 +30,16 @@ def update_patient_profile(patient: Patients, data: PatientUpdate, session: Sess
     session.commit()
     session.refresh(patient)
     return patient
+
+
+def list_treated_patients(doctor_id: int, session: Session):
+    patients = session.exec(
+        select(Patients)
+        .join(Appointments, Appointments.patient_id == Patients.id)
+        .where(
+            Appointments.doctor_id == doctor_id,
+            Appointments.status == AppointmentStatus.completed,
+        )
+        .distinct()
+    ).all()
+    return patients

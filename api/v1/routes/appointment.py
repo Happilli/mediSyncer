@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
@@ -37,18 +39,34 @@ def create_appointment(
 
 @router.get("/me", response_model=list[AppointmentOut])
 def my_appointments_as_patient(
+    filter_date: date | None = None,
+    status: AppointmentStatus | None = None,
     session: Session = Depends(get_session),
     patient: Patients = Depends(required_verified_patient),
 ):
-    return list_my_appointment(session, patient_id=patient.id, doctor_id=None)
+    return list_my_appointment(
+        session,
+        patient_id=patient.id,
+        doctor_id=None,
+        filter_date=filter_date,
+        status=status,
+    )
 
 
 @router.get("/me/doctor", response_model=list[AppointmentOut])
 def my_appointments_as_doctor(
+    filter_date: date | None = None,
+    status: AppointmentStatus | None = None,
     session: Session = Depends(get_session),
     doctor: Doctors = Depends(required_verified_doctor),
 ):
-    return list_my_appointment(session, patient_id=None, doctor_id=doctor.id)
+    return list_my_appointment(
+        session,
+        patient_id=None,
+        doctor_id=doctor.id,
+        filter_date=filter_date,
+        status=status,
+    )
 
 
 @router.get("/{appointment_id}", response_model=AppointmentOut)

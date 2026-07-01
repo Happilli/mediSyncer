@@ -1,3 +1,6 @@
+from datetime import date, datetime, time
+
+from annotated_types import Not
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
@@ -38,7 +41,11 @@ def book_appointment(data: AppointmentCreate, patient: Patients, session: Sessio
 
 
 def list_my_appointment(
-    session: Session, patient_id: int | None, doctor_id: int | None
+    session: Session,
+    patient_id: int | None,
+    doctor_id: int | None,
+    filter_date: date | None = None,
+    status: AppointmentStatus | None = None,
 ):
     query = select(Appointments)
     if patient_id is not None:
@@ -46,6 +53,17 @@ def list_my_appointment(
 
     if doctor_id is not None:
         query = query.where(Appointments.doctor_id == doctor_id)
+
+    if filter_date is not None:
+        day_start = datetime.combine(filter_date, time.min)
+        day_end = datetime.combine(filter_date, time.max)
+        query = query.where(
+            Appointments.appointment_at >= day_start,
+            Appointments.appointment_at <= day_end,
+        )
+    if status is not None:
+        query = query.where(Appointments.status == status)
+
     query = query.order_by(Appointments.appointment_at.desc())
     return session.exec(query).all()
 
