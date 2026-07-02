@@ -38,7 +38,7 @@ async def save_upload_file(file: UploadFile, user_id: int, subfolder: str) -> di
 
     return {
         "filename": filename,
-        "url": f"/api/v1/uploads/serve/{user_id}/{subfolder}/{filename}",
+        "url": f"/api/v1/medias/{user_id}/{subfolder}/{filename}",
     }
 
 

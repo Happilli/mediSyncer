@@ -25,3 +25,17 @@ class HospitalOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class HospitalUpdate(BaseModel):
+    name: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    description: str | None = None
+
+
+class HospitalDashboardOut(HospitalOut):
+    total_doctors: int
+    verified_doctors: int
+    total_appointments: int

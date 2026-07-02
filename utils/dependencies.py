@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from database import get_session
 from models.doctors import Doctors
+from models.hospitals import Hospitals
 from models.patients import Patients
 from models.users import UserRole, Users
 
@@ -128,3 +129,16 @@ def get_own_doctor_profile(
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor profile is not found..")
     return doctor
+
+
+def get_own_hospital_profile(
+    current_user: Users = Depends(require_hospital),
+    session: Session = Depends(get_session),
+) -> Hospitals:
+    hospital = session.exec(
+        select(Hospitals).where(Hospitals.user_id == current_user.id)
+    ).first()
+
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital profile is not found..")
+    return hospital
