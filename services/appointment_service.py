@@ -1,6 +1,5 @@
 from datetime import date, datetime, time
 
-from annotated_types import Not
 from fastapi import HTTPException
 from sqlmodel import Session, select
 

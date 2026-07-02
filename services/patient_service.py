@@ -70,3 +70,16 @@ async def request_patient_verification(
     session.refresh(patient)
 
     return patient
+
+
+async def update_patient_profile_pic(
+    patient: Patients, file: UploadFile, session: Session
+):
+    image_url = await save_verification_doc(file, patient.user_id, "profile_pics")
+
+    patient.profile_pic_url = image_url
+    session.add(patient)
+    session.commit()
+    session.refresh(patient)
+
+    return patient

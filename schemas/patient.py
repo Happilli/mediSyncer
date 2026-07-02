@@ -53,9 +53,6 @@ class PatientUpdate(BaseModel):
     phone: str | None = None
     address: str | None = None
     emergency_contact: str | None = None
-    profile_pic_url: str | None = None
-    citizenship_number: str | None = None
-    citizenship_photo_url: str | None = None
 
 
 class PatientPublicOut(BaseModel):

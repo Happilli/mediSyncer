@@ -11,6 +11,7 @@ from services.patient_service import (
     list_unverified_patients,
     request_patient_verification,
     update_patient_profile,
+    update_patient_profile_pic,
     verify_patient,
 )
 from utils.dependencies import (
@@ -72,3 +73,12 @@ async def request_verification(
     return await request_patient_verification(
         citizenship_number, file, patient, session
     )
+
+
+@router.patch("/me/profile-pic", response_model=PatientOut)
+async def update_my_patient_profile_pic(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    patient: Patients = Depends(get_own_patient_profile),
+):
+    return await update_patient_profile_pic(patient, file, session)

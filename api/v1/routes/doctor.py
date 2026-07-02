@@ -22,6 +22,7 @@ from services.doctor_service import (
     list_unverified_doctors,
     register_doctor,
     update_doctor_profile,
+    update_doctor_profile_pic,
     verify_doctor,
 )
 from utils.dependencies import (
@@ -137,3 +138,12 @@ def get_doctor_timeslots(
     doctor_id: int, available_only: bool = True, session: Session = Depends(get_session)
 ):
     return list_doctor_timeslots(doctor_id, session, available_only)
+
+
+@router.patch("/me/profile-pic", response_model=DoctorOut)
+async def update_my_doctor_profile_pic(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    doctor: Doctors = Depends(get_own_doctor_profile),
+):
+    return await update_doctor_profile_pic(doctor, file, session)

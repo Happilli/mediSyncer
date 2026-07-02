@@ -52,7 +52,6 @@ class DoctorUpdate(BaseModel):
     phone: str | None = None
     bio: str | None = None
     address: str | None = None
-    profile_pic_url: str | None = None
     years_experience: int | None = None
 
 

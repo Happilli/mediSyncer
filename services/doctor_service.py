@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-from annotated_types import doc
 from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
 
@@ -196,6 +195,18 @@ def update_doctor_profile(doctor: Doctors, data: DoctorUpdate, session: Session)
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(doctor, key, value)
+    session.add(doctor)
+    session.commit()
+    session.refresh(doctor)
+    return doctor
+
+
+async def update_doctor_profile_pic(
+    doctor: Doctors, file: UploadFile, session: Session
+):
+    image_url = await save_verification_doc(file, doctor.user_id, "profile_pics")
+
+    doctor.profile_pic_url = image_url
     session.add(doctor)
     session.commit()
     session.refresh(doctor)
