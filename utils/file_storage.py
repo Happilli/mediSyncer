@@ -9,7 +9,11 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 STORAGE_ROOT = "serve"
 
 
-async def save_upload_file(file: UploadFile, subfolder: str) -> dict:
+def create_user_folder(user_id: int) -> None:
+    os.makedirs(os.path.join(STORAGE_ROOT, str(user_id)), exist_ok=True)
+
+
+async def save_upload_file(file: UploadFile, user_id: int, subfolder: str) -> dict:
     if file.filename is None:
         raise HTTPException(status_code=400, detail="No filename provided.")
 
@@ -25,7 +29,7 @@ async def save_upload_file(file: UploadFile, subfolder: str) -> dict:
         raise HTTPException(status_code=400, detail="File too large. Max 5MB.")
 
     filename = f"{uuid.uuid4().hex}{ext}"
-    folder_path = os.path.join(STORAGE_ROOT, subfolder)
+    folder_path = os.path.join(STORAGE_ROOT, str(user_id), subfolder)
     os.makedirs(folder_path, exist_ok=True)
     file_path = os.path.join(folder_path, filename)
 
@@ -34,12 +38,17 @@ async def save_upload_file(file: UploadFile, subfolder: str) -> dict:
 
     return {
         "filename": filename,
-        "url": f"/api/v1/uploads/serve/{subfolder}/{filename}",
+        "url": f"/api/v1/uploads/serve/{user_id}/{subfolder}/{filename}",
     }
 
 
-def get_file_path(subfolder: str, filename: str) -> str:
-    path = os.path.join(STORAGE_ROOT, subfolder, filename)
+def get_file_path(user_id: int, subfolder: str, filename: str) -> str:
+    path = os.path.join(STORAGE_ROOT, str(user_id), subfolder, filename)
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="File not found.")
     return path
+
+
+async def save_verification_doc(file: UploadFile, user_id: int, subfolder: str) -> str:
+    result = await save_upload_file(file, user_id, subfolder)
+    return result["url"]

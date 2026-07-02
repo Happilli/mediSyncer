@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlmodel import Session
 
 from database import get_session
@@ -34,13 +34,44 @@ from utils.dependencies import (
 router = APIRouter(prefix="/doctors", tags=["doctors"])
 
 
+# @router.post("/register", status_code=201)
+# def register_hospital_doctor(
+#     data: DoctorRegister,
+#     session: Session = Depends(get_session),
+#     current_hospital: Users = Depends(require_hospital),
+# ):
+#     return register_doctor(data, session, current_hospital)
+
+
 @router.post("/register", status_code=201)
-def register_hospital_doctor(
-    data: DoctorRegister,
+async def register_hospital_doctor(
+    email: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(...),
+    phone: str = Form(...),
+    department: str = Form(...),
+    speciality: str = Form(...),
+    bio: str = Form(...),
+    address: str = Form(...),
+    license_number: str = Form(...),
+    years_experience: int = Form(...),
+    license_photo: UploadFile = File(...),
     session: Session = Depends(get_session),
     current_hospital: Users = Depends(require_hospital),
 ):
-    return register_doctor(data, session, current_hospital)
+    data = DoctorRegister(
+        email=email,
+        password=password,
+        name=name,
+        phone=phone,
+        department=department,
+        speciality=speciality,
+        bio=bio,
+        address=address,
+        license_number=license_number,
+        years_experience=years_experience,
+    )
+    return await register_doctor(data, license_photo, session, current_hospital)
 
 
 @router.get("/", response_model=list[DoctorOut])

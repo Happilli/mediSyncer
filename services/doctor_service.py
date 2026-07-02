@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from annotated_types import doc
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
 
 from models.appointments import Appointments
@@ -11,10 +11,16 @@ from models.hospitals import Hospitals
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
+from utils.file_storage import create_user_folder, save_verification_doc
 from utils.security import hash_password
 
 
-def register_doctor(data: DoctorRegister, session: Session, current_hospital: Users):
+async def register_doctor(
+    data: DoctorRegister,
+    license_photo: UploadFile,
+    session: Session,
+    current_hospital: Users,
+):
     existing = session.exec(select(Users).where(Users.email == data.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="email already registered")
@@ -45,6 +51,11 @@ def register_doctor(data: DoctorRegister, session: Session, current_hospital: Us
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID generation failed")
 
+    create_user_folder(user.id)
+    license_photo_url = await save_verification_doc(
+        license_photo, user.id, "license_photos"
+    )
+
     doctor = Doctors(
         user_id=user.id,
         hospital_id=hospital.id,
@@ -55,7 +66,7 @@ def register_doctor(data: DoctorRegister, session: Session, current_hospital: Us
         bio=data.bio,
         address=data.address,
         license_number=data.license_number,
-        license_photo_url=data.license_photo_url,
+        license_photo_url=license_photo_url,
         years_experience=data.years_experience,
     )
     session.add(doctor)

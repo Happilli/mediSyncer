@@ -1,9 +1,10 @@
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, create_engine, select
 
 from models.hospitals import Hospitals
 from models.users import UserRole, Users
 from schemas.hospital import HospitalRegister
+from utils.file_storage import create_user_folder
 from utils.security import hash_password
 
 
@@ -32,6 +33,8 @@ def register_hospital(data: HospitalRegister, session: Session):
 
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID generation failed")
+
+    create_user_folder(user.id)
 
     hospital = Hospitals(
         user_id=user.id,

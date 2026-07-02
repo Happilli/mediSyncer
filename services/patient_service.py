@@ -1,9 +1,10 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
 
 from models.appointments import Appointments, AppointmentStatus
 from models.patients import Patients
 from schemas.patient import PatientUpdate
+from utils.file_storage import save_verification_doc
 
 
 def list_unverified_patients(session: Session):
@@ -43,3 +44,29 @@ def list_treated_patients(doctor_id: int, session: Session):
         .distinct()
     ).all()
     return patients
+
+
+async def request_patient_verification(
+    citizenship_number: str,
+    file: UploadFile,
+    patient: Patients,
+    session: Session,
+):
+    if (
+        patient.citizenship_number is not None
+        or patient.citizenship_photo_url is not None
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Verification already requested. Contact support to resubmit.",
+        )
+
+    photo_url = await save_verification_doc(file, patient.user_id, "citizenship_photos")
+
+    patient.citizenship_number = citizenship_number
+    patient.citizenship_photo_url = photo_url
+    session.add(patient)
+    session.commit()
+    session.refresh(patient)
+
+    return patient

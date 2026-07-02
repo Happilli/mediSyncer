@@ -12,8 +12,7 @@ class DoctorRegister(BaseModel):
     speciality: str
     bio: str
     address: str
-    license_number: str
-    license_photo_url: str
+    license_number: str | None = None
     years_experience: int
 
 

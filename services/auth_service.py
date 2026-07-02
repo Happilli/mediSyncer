@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from models.patients import Patients
 from models.users import UserRole, Users
 from schemas.patient import PatientRegister
+from utils.file_storage import create_user_folder
 from utils.security import create_access_token, hash_password, verify_password
 
 
@@ -24,6 +25,7 @@ def register_patient(data: PatientRegister, session: Session):
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID generation failed")
 
+    create_user_folder(user.id)
     patient = Patients(
         user_id=user.id,
         name=data.name,

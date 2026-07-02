@@ -1,8 +1,8 @@
-"""add proper model
+"""model upload
 
-Revision ID: 9363b3dc27f7
+Revision ID: 3f9a5005d5de
 Revises: 
-Create Date: 2026-07-01 00:23:20.849229
+Create Date: 2026-07-02 04:16:58.251318
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9363b3dc27f7'
+revision: str = '3f9a5005d5de'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

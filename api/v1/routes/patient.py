@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlmodel import Session
 
 from database import get_session
@@ -9,6 +9,7 @@ from schemas.patient import PatientOut, PatientPublicOut, PatientUpdate
 from services.patient_service import (
     list_treated_patients,
     list_unverified_patients,
+    request_patient_verification,
     update_patient_profile,
     verify_patient,
 )
@@ -59,3 +60,15 @@ def my_treated_patients(
     if doctor.id is None:
         raise HTTPException(status_code=500, detail="Doctor id missing")
     return list_treated_patients(doctor.id, session)
+
+
+@router.post("/request-verification", response_model=PatientOut)
+async def request_verification(
+    citizenship_number: str = Form(...),
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    patient: Patients = Depends(get_own_patient_profile),
+):
+    return await request_patient_verification(
+        citizenship_number, file, patient, session
+    )
