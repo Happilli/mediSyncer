@@ -40,6 +40,7 @@ class PatientOut(BaseModel):
     gender: Gender
     blood_group: BloodGroup
     emergency_contact: str
+    profile_pic_url: str | None = None
     citizenship_number: str | None = None
     citizenship_photo_url: str | None = None
     is_verified: bool

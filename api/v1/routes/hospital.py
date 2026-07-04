@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from database import get_session
 from models.hospitals import Hospitals
+from models.users import Users
 from schemas.hospital import (
     HospitalDashboardOut,
     HospitalOut,
@@ -10,6 +11,7 @@ from schemas.hospital import (
     HospitalUpdate,
 )
 from services.hospital_service import (
+    delete_hospital,
     get_hospital,
     get_hospital_dashboard,
     list_hospitals,
@@ -29,6 +31,15 @@ def register_new_hospital(
     _: None = Depends(require_admin),
 ):
     return register_hospital(data, session)
+
+
+@router.delete("/{hospital_id}")
+def delete_hospital_route(
+    hospital_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return delete_hospital(hospital_id, session)
 
 
 @router.get("/me", response_model=HospitalDashboardOut)

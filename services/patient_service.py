@@ -4,7 +4,11 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.patients import Patients
 from schemas.patient import PatientUpdate
-from utils.file_storage import save_verification_doc
+from utils.file_storage import (
+    delete_file_by_url,
+    delete_user_folder,
+    save_verification_doc,
+)
 
 
 def list_unverified_patients(session: Session):
@@ -75,6 +79,7 @@ async def request_patient_verification(
 async def update_patient_profile_pic(
     patient: Patients, file: UploadFile, session: Session
 ):
+    old_url = patient.profile_pic_url
     image_url = await save_verification_doc(file, patient.user_id, "profile_pics")
 
     patient.profile_pic_url = image_url
@@ -82,4 +87,25 @@ async def update_patient_profile_pic(
     session.commit()
     session.refresh(patient)
 
+    delete_file_by_url(old_url)
     return patient
+
+
+def delete_patient(patient_id: int, session: Session):
+    from models.users import Users
+
+    patient = session.get(Patients, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient is not found..")
+
+    user_id = patient.user_id
+    user = session.get(Users, user_id)
+    if user is not None:
+        session.delete(user)
+    session.commit()
+
+    delete_user_folder(user_id)
+
+    return {
+        "message": f"{patient.name} and all associated records have been nuked from the mediSync platform.."
+    }

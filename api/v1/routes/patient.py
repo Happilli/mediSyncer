@@ -7,6 +7,7 @@ from models.patients import Patients
 from models.users import Users
 from schemas.patient import PatientOut, PatientPublicOut, PatientUpdate
 from services.patient_service import (
+    delete_patient,
     list_treated_patients,
     list_unverified_patients,
     request_patient_verification,
@@ -37,14 +38,14 @@ def update_my_patient_profile(
     return update_patient_profile(patient, data, session)
 
 
-@router.get("/pending", status_code=201, response_model=list[PatientOut])
+@router.get("/pending", response_model=list[PatientOut])
 def get_pending_patients(
     session: Session = Depends(get_session), _: Users = Depends(require_admin)
 ):
     return list_unverified_patients(session)
 
 
-@router.post("/{patient_id}/verify", status_code=201)
+@router.post("/{patient_id}/verify", status_code=200)
 def verify_patient_route(
     patient_id: int,
     session: Session = Depends(get_session),
@@ -82,3 +83,12 @@ async def update_my_patient_profile_pic(
     patient: Patients = Depends(get_own_patient_profile),
 ):
     return await update_patient_profile_pic(patient, file, session)
+
+
+@router.delete("/{patient_id}")
+def delete_patient_route(
+    patient_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return delete_patient(patient_id, session)

@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 
 from fastapi import HTTPException, UploadFile
@@ -52,3 +53,26 @@ def get_file_path(user_id: int, subfolder: str, filename: str) -> str:
 async def save_verification_doc(file: UploadFile, user_id: int, subfolder: str) -> str:
     result = await save_upload_file(file, user_id, subfolder)
     return result["url"]
+
+
+def delete_file_by_url(url: str | None) -> None:
+    if not url:
+        return
+    prefix = "/api/v1/medias/"
+    if not url.startswith(prefix):
+        return
+    rel_path = url[len(prefix) :]
+    path = os.path.join(STORAGE_ROOT, rel_path)
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+    except OSError:
+        pass
+
+
+def delete_user_folder(user_id: int) -> None:
+    path = os.path.join(STORAGE_ROOT, str(user_id))
+    try:
+        shutil.rmtree(path, ignore_errors=True)
+    except OSError:
+        pass

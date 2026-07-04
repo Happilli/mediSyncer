@@ -1,10 +1,17 @@
 from fastapi import HTTPException, UploadFile
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
+from starlette.types import HTTPExceptionHandler
 
+from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.users import UserRole, Users
 from schemas.hospital import HospitalRegister, HospitalUpdate
-from utils.file_storage import create_user_folder, save_verification_doc
+from utils.file_storage import (
+    create_user_folder,
+    delete_file_by_url,
+    delete_user_folder,
+    save_verification_doc,
+)
 from utils.security import hash_password
 
 
@@ -106,7 +113,7 @@ def get_hospital_dashboard(hospital: Hospitals, session: Session):
 async def update_hospital_image(
     hospital: Hospitals, file: UploadFile, session: Session
 ):
-
+    old_url = hospital.image_url
     image_url = await save_verification_doc(file, hospital.user_id, "hospital_images")
 
     hospital.image_url = image_url
@@ -114,4 +121,34 @@ async def update_hospital_image(
     session.commit()
     session.refresh(hospital)
 
+    delete_file_by_url(old_url)
     return hospital
+
+
+def delete_hospital(hospital_id: int, session: Session):
+    hospital = session.get(Hospitals, hospital_id)
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found to delete...")
+
+    doctors = session.exec(
+        select(Doctors).where(Doctors.hospital_id == hospital_id)
+    ).all()
+
+    affected_user_ids = [hospital.user_id] + [d.user_id for d in doctors]
+    for doctor in doctors:
+        doctor_user = session.get(Users, doctor.user_id)
+        if doctor_user is not None:
+            session.delete(doctor_user)
+
+    hospital_user = session.get(Users, hospital.user_id)
+    if hospital_user is not None:
+        session.delete(hospital_user)
+
+    session.commit()
+
+    for uid in affected_user_ids:
+        delete_user_folder(uid)
+
+    return {
+        "message": f"{hospital.name} and all the associated doctors have been nuked from mediSync platform.."
+    }

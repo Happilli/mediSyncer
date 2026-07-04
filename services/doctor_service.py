@@ -10,7 +10,11 @@ from models.hospitals import Hospitals
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
-from utils.file_storage import create_user_folder, save_verification_doc
+from utils.file_storage import (
+    create_user_folder,
+    delete_file_by_url,
+    save_verification_doc,
+)
 from utils.security import hash_password
 
 
@@ -204,10 +208,12 @@ def update_doctor_profile(doctor: Doctors, data: DoctorUpdate, session: Session)
 async def update_doctor_profile_pic(
     doctor: Doctors, file: UploadFile, session: Session
 ):
+    old_url = doctor.profile_pic_url
     image_url = await save_verification_doc(file, doctor.user_id, "profile_pics")
 
     doctor.profile_pic_url = image_url
     session.add(doctor)
     session.commit()
     session.refresh(doctor)
+    delete_file_by_url(old_url)
     return doctor

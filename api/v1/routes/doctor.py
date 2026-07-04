@@ -93,7 +93,7 @@ def get_pending_doctors(
     return list_unverified_doctors(session)
 
 
-@router.patch("/{doctor_id}/verify")
+@router.patch("/{doctor_id}/verify", status_code=200)
 def verify_doctor_route(
     doctor_id: int,
     session: Session = Depends(get_session),
