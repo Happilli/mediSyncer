@@ -39,7 +39,7 @@ async def save_upload_file(file: UploadFile, user_id: int, subfolder: str) -> di
 
     return {
         "filename": filename,
-        "url": f"/api/v1/medias/{user_id}/{subfolder}/{filename}",
+        "url": f"/medias/{user_id}/{subfolder}/{filename}",
     }
 
 
@@ -58,7 +58,7 @@ async def save_verification_doc(file: UploadFile, user_id: int, subfolder: str) 
 def delete_file_by_url(url: str | None) -> None:
     if not url:
         return
-    prefix = "/api/v1/medias/"
+    prefix = "/medias/"
     if not url.startswith(prefix):
         return
     rel_path = url[len(prefix) :]
