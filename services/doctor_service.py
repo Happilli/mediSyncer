@@ -114,14 +114,26 @@ def get_doctor(doctor_id: int, session: Session):
     return doctor
 
 
-def list_unverified_doctors(session: Session):
-    return session.exec(select(Doctors).where(Doctors.is_verified == False)).all()
+def list_unverified_doctors_by_hospitals(hospital_id: int, session: Session):
+    hospital = session.get(Hospitals, hospital_id)
+    if hospital is None:
+        return HTTPException(status_code=404, detail="Hospital not found..")
+
+    return session.exec(
+        select(Doctors).where(
+            Doctors.hospital_id == hospital_id, Doctors.is_verified == False
+        )
+    ).all()
 
 
-def verify_doctor(doctor_id: int, session: Session):
+def verify_doctor(hospital_id: int, doctor_id: int, session: Session):
     doctor = session.get(Doctors, doctor_id)
     if doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
+    if doctor.hospital_id != hospital_id:
+        raise HTTPException(
+            status_code=404, detail="Doctor dosnt belong to this hospital."
+        )
     doctor.is_verified = True
     session.add(doctor)
     session.commit()

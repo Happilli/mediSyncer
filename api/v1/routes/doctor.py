@@ -5,7 +5,6 @@ from database import get_session
 from models.doctors import Doctors
 from models.users import Users
 from schemas.doctor import (
-    DoctorAdminOut,
     DoctorOut,
     DoctorProfileOut,
     DoctorRegister,
@@ -19,15 +18,12 @@ from services.doctor_service import (
     get_my_profile,
     list_doctor_timeslots,
     list_doctors,
-    list_unverified_doctors,
     register_doctor,
     update_doctor_profile,
     update_doctor_profile_pic,
-    verify_doctor,
 )
 from utils.dependencies import (
     get_own_doctor_profile,
-    require_admin,
     require_hospital,
     required_verified_doctor,
 )
@@ -84,22 +80,6 @@ def get_doctors(
     session: Session = Depends(get_session),
 ):
     return list_doctors(session, hospital_id, department, speciality, search)
-
-
-@router.get("/pending", response_model=list[DoctorAdminOut])
-def get_pending_doctors(
-    session: Session = Depends(get_session), _: Users = Depends(require_admin)
-):
-    return list_unverified_doctors(session)
-
-
-@router.patch("/{doctor_id}/verify", status_code=200)
-def verify_doctor_route(
-    doctor_id: int,
-    session: Session = Depends(get_session),
-    _: Users = Depends(require_admin),
-):
-    return verify_doctor(doctor_id, session)
 
 
 @router.get("/me", response_model=DoctorProfileOut)

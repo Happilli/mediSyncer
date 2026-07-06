@@ -4,12 +4,14 @@ from sqlmodel import Session
 from database import get_session
 from models.hospitals import Hospitals
 from models.users import Users
+from schemas.doctor import DoctorAdminOut
 from schemas.hospital import (
     HospitalDashboardOut,
     HospitalOut,
     HospitalRegister,
     HospitalUpdate,
 )
+from services.doctor_service import list_unverified_doctors_by_hospitals, verify_doctor
 from services.hospital_service import (
     delete_hospital,
     get_hospital,
@@ -40,6 +42,25 @@ def delete_hospital_route(
     _: Users = Depends(require_admin),
 ):
     return delete_hospital(hospital_id, session)
+
+
+@router.get("/{hospital_id}/doctors/pending", response_model=list[DoctorAdminOut])
+def get_pending_doctors_for_hospital(
+    hospital_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return list_unverified_doctors_by_hospitals(hospital_id, session)
+
+
+@router.patch("/{hospital_id}/doctors/{doctor_id}/verify", status_code=200)
+def verify_doctor_for_hospital(
+    hospital_id: int,
+    doctor_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return verify_doctor(hospital_id, doctor_id, session)
 
 
 @router.get("/me", response_model=HospitalDashboardOut)
