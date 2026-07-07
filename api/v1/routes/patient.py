@@ -5,11 +5,17 @@ from database import get_session
 from models.doctors import Doctors
 from models.patients import Patients
 from models.users import Users
-from schemas.patient import PatientOut, PatientPublicOut, PatientUpdate
+from schemas.patient import (
+    PatientListItemOut,
+    PatientOut,
+    PatientPublicOut,
+    PatientUpdate,
+)
 from services.patient_service import (
     delete_patient,
+    get_patient_admin,
+    list_all_patients,
     list_treated_patients,
-    list_unverified_patients,
     request_patient_verification,
     update_patient_profile,
     update_patient_profile_pic,
@@ -38,11 +44,20 @@ def update_my_patient_profile(
     return update_patient_profile(patient, data, session)
 
 
-@router.get("/pending", response_model=list[PatientOut])
-def get_pending_patients(
+@router.get("/", response_model=list[PatientListItemOut])
+def get_all_patients(
     session: Session = Depends(get_session), _: Users = Depends(require_admin)
 ):
-    return list_unverified_patients(session)
+    return list_all_patients(session)
+
+
+@router.get("/{patient_id}", response_model=PatientOut)
+def get_patient_detail(
+    patient_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return get_patient_admin(patient_id, session)
 
 
 @router.post("/{patient_id}/verify", status_code=200)

@@ -4,14 +4,18 @@ from sqlmodel import Session
 from database import get_session
 from models.hospitals import Hospitals
 from models.users import Users
-from schemas.doctor import DoctorAdminOut
+from schemas.doctor import DoctorAdminOut, DoctorListItemOut
 from schemas.hospital import (
     HospitalDashboardOut,
     HospitalOut,
     HospitalRegister,
     HospitalUpdate,
 )
-from services.doctor_service import list_unverified_doctors_by_hospitals, verify_doctor
+from services.doctor_service import (
+    get_doctor_admin,
+    list_all_doctors_by_hospital,
+    verify_doctor,
+)
 from services.hospital_service import (
     delete_hospital,
     get_hospital,
@@ -44,13 +48,23 @@ def delete_hospital_route(
     return delete_hospital(hospital_id, session)
 
 
-@router.get("/{hospital_id}/doctors/pending", response_model=list[DoctorAdminOut])
-def get_pending_doctors_for_hospital(
+@router.get("/{hospital_id}/doctors", response_model=list[DoctorListItemOut])
+def get_all_doctors_for_hospital(
     hospital_id: int,
     session: Session = Depends(get_session),
     _: Users = Depends(require_admin),
 ):
-    return list_unverified_doctors_by_hospitals(hospital_id, session)
+    return list_all_doctors_by_hospital(hospital_id, session)
+
+
+@router.get("/{hospital_id}/doctors/{doctor_id}", response_model=DoctorAdminOut)
+def get_doctor_detail_for_hospital(
+    hospital_id: int,
+    doctor_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return get_doctor_admin(hospital_id, doctor_id, session)
 
 
 @router.patch("/{hospital_id}/doctors/{doctor_id}/verify", status_code=200)

@@ -11,8 +11,15 @@ from utils.file_storage import (
 )
 
 
-def list_unverified_patients(session: Session):
-    return session.exec(select(Patients).where(Patients.is_verified == False)).all()
+def list_all_patients(session: Session):
+    return session.exec(select(Patients)).all()
+
+
+def get_patient_admin(patient_id: int, session: Session):
+    patient = session.get(Patients, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient is not found..")
+    return patient
 
 
 def verify_patient(patient_id: int, session: Session):

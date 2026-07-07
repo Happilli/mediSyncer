@@ -63,3 +63,13 @@ class DoctorAdminOut(DoctorOut):
 class DoctorProfileOut(DoctorOut):
     patients_this_month: int
     total_patients: int
+
+
+class DoctorListItemOut(BaseModel):
+    id: int
+    name: str
+    is_verified: bool
+    profile_pic_url: str | None = None
+
+    class Config:
+        from_attributes = True

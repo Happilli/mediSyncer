@@ -67,3 +67,13 @@ class PatientPublicOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PatientListItemOut(BaseModel):
+    id: int
+    name: str
+    is_verified: bool
+    profile_pic_url: str | None = None
+
+    class Config:
+        from_attributes = True

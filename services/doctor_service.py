@@ -114,18 +114,6 @@ def get_doctor(doctor_id: int, session: Session):
     return doctor
 
 
-def list_unverified_doctors_by_hospitals(hospital_id: int, session: Session):
-    hospital = session.get(Hospitals, hospital_id)
-    if hospital is None:
-        return HTTPException(status_code=404, detail="Hospital not found..")
-
-    return session.exec(
-        select(Doctors).where(
-            Doctors.hospital_id == hospital_id, Doctors.is_verified == False
-        )
-    ).all()
-
-
 def verify_doctor(hospital_id: int, doctor_id: int, session: Session):
     doctor = session.get(Doctors, doctor_id)
     if doctor is None:
@@ -228,4 +216,22 @@ async def update_doctor_profile_pic(
     session.commit()
     session.refresh(doctor)
     delete_file_by_url(old_url)
+    return doctor
+
+
+def list_all_doctors_by_hospital(hospital_id: int, session: Session):
+    hospital = session.get(Hospitals, hospital_id)
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found..")
+    return session.exec(select(Doctors).where(Doctors.hospital_id == hospital_id)).all()
+
+
+def get_doctor_admin(hospital_id: int, doctor_id: int, session: Session):
+    doctor = session.get(Doctors, doctor_id)
+    if doctor is None:
+        raise HTTPException(status_code=404, detail="Doctor not found..")
+    if doctor.hospital_id != hospital_id:
+        raise HTTPException(
+            status_code=404, detail="Doctor doesn't belong to this hospital."
+        )
     return doctor
