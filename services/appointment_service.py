@@ -9,7 +9,7 @@ from models.notifications import NotificationType
 from models.patients import Patients
 from models.timeslots import Timeslots
 from schemas.appointment import AppointmentCreate
-from services.notification_service import create_notification
+from services.notification_service import create_notification, notify_hospital
 
 
 def book_appointment(data: AppointmentCreate, patient: Patients, session: Session):
@@ -49,6 +49,16 @@ def book_appointment(data: AppointmentCreate, patient: Patients, session: Sessio
             related_id=appointment.id,
             related_type="appointment",
         )
+
+    notify_hospital(
+        session,
+        appointment.hospital_id,
+        NotificationType.appointment_booked,
+        "New appointment booked",
+        f"{patient.name} booked an appointment with Dr. {doctor.name if doctor else 'a doctor'} at your hospital.",
+        related_id=appointment.id,
+        related_type="appointment",
+    )
 
     return appointment
 
@@ -171,6 +181,15 @@ def update_appointment_status(
                 related_id=appt.id,
                 related_type="appointment",
             )
+            notify_hospital(
+                session,
+                appt.hospital_id,
+                notif_type,
+                f"Appointment {new_status.value}",
+                f"Appointment between Dr. {doctor.name if doctor else 'a doctor'} and {patient.name} is now {new_status.value}.",
+                related_id=appt.id,
+                related_type="appointment",
+            )
     elif current_patient is not None and doctor is not None:
         create_notification(
             session,
@@ -178,6 +197,15 @@ def update_appointment_status(
             NotificationType.appointment_cancelled,
             "Appointment cancelled!",
             f"{current_patient.name} cancelled their appointnment.",
+            related_id=appt.id,
+            related_type="appointment",
+        )
+        notify_hospital(
+            session,
+            appt.hospital_id,
+            NotificationType.appointment_cancelled,
+            "Appointment cancelled!",
+            f"{current_patient.name} cancelled their appointment with Dr. {doctor.name}.",
             related_id=appt.id,
             related_type="appointment",
         )

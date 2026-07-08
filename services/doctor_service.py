@@ -11,7 +11,11 @@ from models.notifications import NotificationType
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
-from services.notification_service import create_notification, notify_role
+from services.notification_service import (
+    create_notification,
+    notify_hospital,
+    notify_role,
+)
 from utils.file_storage import (
     create_user_folder,
     delete_file_by_url,
@@ -147,6 +151,17 @@ def verify_doctor(hospital_id: int, doctor_id: int, session: Session):
         related_id=doctor.id,
         related_type="doctor",
     )
+
+    notify_hospital(
+        session,
+        doctor.hospital_id,
+        NotificationType.doctor_verified,
+        "Doctor verified",
+        f"Dr. {doctor.name} has been verified by admin and is now fully active.",
+        related_id=doctor.id,
+        related_type="doctor",
+    )
+
     return {"message": f"{doctor.name} has been verified!"}
 
 

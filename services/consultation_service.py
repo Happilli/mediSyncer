@@ -5,7 +5,10 @@ from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
 from models.medical_history import Medical_History
+from models.notifications import NotificationType
+from models.patients import Patients
 from schemas.consultation import ConsultationCreate
+from services.notification_service import notify_hospital
 
 
 def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Session):
@@ -60,6 +63,17 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
     )
     session.add(history_entry)
     session.commit()
+
+    patient = session.get(Patients, appt.patient_id)
+    notify_hospital(
+        session,
+        consultation.hospital_id,
+        NotificationType.consultation_created,
+        "New consultation recorded",
+        f"Dr. {doctor.name} recorded a consultation for {patient.name if patient else 'a patient'}.",
+        related_id=consultation.id,
+        related_type="consultation",
+    )
 
     return consultation
 

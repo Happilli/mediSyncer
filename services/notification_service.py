@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from models.hospitals import Hospitals
 from models.notifications import Notifications, NotificationType
 from models.users import UserRole, Users
 from utils.ws_manager import manager
@@ -44,6 +45,31 @@ def create_notification(
     _broadcast(notification)
 
     return notification
+
+
+def notify_hospital(
+    session: Session,
+    hospital_id: int | None,
+    type: NotificationType,
+    title: str,
+    message: str,
+    related_id: int | None = None,
+    related_type: str | None = None,
+):
+    if hospital_id is None:
+        return None
+    hospital = session.get(Hospitals, hospital_id)
+    if hospital is None:
+        return None
+    return create_notification(
+        session,
+        hospital.user_id,
+        type,
+        title,
+        message,
+        related_id=related_id,
+        related_type=related_type,
+    )
 
 
 def notify_role(

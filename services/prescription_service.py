@@ -15,7 +15,7 @@ from schemas.prescription import (
     PrescriptionCreate,
     PrescriptionDetailOut,
 )
-from services.notification_service import create_notification
+from services.notification_service import create_notification, notify_hospital
 
 
 def _to_detail(
@@ -112,6 +112,17 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
             related_id=prescription.id,
             related_type="prescription",
         )
+
+    notify_hospital(
+        session,
+        appt.hospital_id,
+        NotificationType.prescription_created,
+        "New prescription issued",
+        f"Dr. {doctor.name} issued a prescription for {patient.name if patient else 'a patient'}.",
+        related_id=prescription.id,
+        related_type="prescription",
+    )
+
     return _to_detail(prescription, medications)
 
 
