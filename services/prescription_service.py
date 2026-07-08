@@ -7,6 +7,7 @@ from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
 from models.medications import Medications
+from models.notifications import NotificationType
 from models.patients import Patients
 from models.prescriptions import Prescriptions
 from schemas.prescription import (
@@ -14,6 +15,7 @@ from schemas.prescription import (
     PrescriptionCreate,
     PrescriptionDetailOut,
 )
+from services.notification_service import create_notification
 
 
 def _to_detail(
@@ -98,6 +100,18 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
     session.commit()
     for m in medications:
         session.refresh(m)
+
+    patient = session.get(Patients, appt.patient_id)
+    if patient is not None:
+        create_notification(
+            session,
+            patient.user_id,
+            NotificationType.prescription_created,
+            "New prescription",
+            f"Dr. {doctor.name} issued you a nwe prescription.",
+            related_id=prescription.id,
+            related_type="prescription",
+        )
     return _to_detail(prescription, medications)
 
 

@@ -7,9 +7,11 @@ from models.appointments import Appointments
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
 from models.hospitals import Hospitals
+from models.notifications import NotificationType
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
+from services.notification_service import create_notification, notify_role
 from utils.file_storage import (
     create_user_folder,
     delete_file_by_url,
@@ -83,6 +85,16 @@ async def register_doctor(
     session.add(cond)
     session.commit()
 
+    notify_role(
+        session,
+        UserRole.admin,
+        NotificationType.doctor_registered,
+        "New doctor pending verification",
+        f"{doctor.name} was registered by {hospital.name} and needs verification.",
+        related_id=doctor.id,
+        related_type="doctor",
+    )
+
     return {"message": f"{doctor.name} has been registered!"}
 
 
@@ -126,6 +138,15 @@ def verify_doctor(hospital_id: int, doctor_id: int, session: Session):
     session.add(doctor)
     session.commit()
     session.refresh(doctor)
+    create_notification(
+        session,
+        doctor.user_id,
+        NotificationType.doctor_verified,
+        "You're verified!",
+        "Your identity has been verified. You can fully access mediSyncer now.",
+        related_id=doctor.id,
+        related_type="doctor",
+    )
     return {"message": f"{doctor.name} has been verified!"}
 
 

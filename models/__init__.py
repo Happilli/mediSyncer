@@ -5,6 +5,7 @@ from .doctors import Doctors
 from .hospitals import Hospitals
 from .medical_history import Medical_History
 from .medications import Medications
+from .notifications import Notifications
 from .patients import Patients
 from .prescriptions import Prescriptions
 from .timeslots import Timeslots
@@ -22,4 +23,5 @@ __all__ = [
     "Consultations",
     "Medications",
     "Timeslots",
+    "Notifications",
 ]

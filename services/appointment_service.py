@@ -5,9 +5,11 @@ from sqlmodel import Session, select
 
 from models.appointments import Appointments, AppointmentStatus
 from models.doctors import Doctors
+from models.notifications import NotificationType
 from models.patients import Patients
 from models.timeslots import Timeslots
 from schemas.appointment import AppointmentCreate
+from services.notification_service import create_notification
 
 
 def book_appointment(data: AppointmentCreate, patient: Patients, session: Session):
@@ -35,6 +37,18 @@ def book_appointment(data: AppointmentCreate, patient: Patients, session: Sessio
     session.add(slot)
     session.commit()
     session.refresh(appointment)
+
+    doctor = session.get(Doctors, appointment.doctor_id)
+    if doctor is not None:
+        create_notification(
+            session,
+            doctor.user_id,
+            NotificationType.appointment_booked,
+            "New appointment booked",
+            f"{patient.name} booked an appointment with you.",
+            related_id=appointment.id,
+            related_type="appointment",
+        )
 
     return appointment
 
@@ -136,4 +150,35 @@ def update_appointment_status(
 
     session.commit()
     session.refresh(appt)
+
+    doctor = session.get(Doctors, appt.doctor_id)
+    patient = session.get(Patients, appt.patient_id)
+
+    if current_doctor is not None and patient is not None:
+        type_map = {
+            AppointmentStatus.confirmed: NotificationType.appointment_confirmed,
+            AppointmentStatus.cancelled: NotificationType.appointment_cancelled,
+            AppointmentStatus.completed: NotificationType.appointment_completed,
+        }
+        notif_type = type_map.get(new_status)
+        if notif_type is not None:
+            create_notification(
+                session,
+                patient.user_id,
+                notif_type,
+                f"Appointment {new_status.value}",
+                f"Your appointment status changed to {new_status.value}",
+                related_id=appt.id,
+                related_type="appointment",
+            )
+    elif current_patient is not None and doctor is not None:
+        create_notification(
+            session,
+            doctor.user_id,
+            NotificationType.appointment_cancelled,
+            "Appointment cancelled!",
+            f"{current_patient.name} cancelled their appointnment.",
+            related_id=appt.id,
+            related_type="appointment",
+        )
     return appt

@@ -8,6 +8,7 @@ from api.v1.routes.hospital import router as hospital_router
 from api.v1.routes.media import router as media_router
 from api.v1.routes.medical_history import router as medical_history_router
 from api.v1.routes.medication import router as medication_router
+from api.v1.routes.notifications import router as notification_router
 from api.v1.routes.patient import router as patient_router
 from api.v1.routes.prescription import router as prescription_router
 
@@ -16,6 +17,7 @@ from api.v1.routes.prescription import router as prescription_router
 api_router = APIRouter(prefix="/api/v1")
 # api_router.include_router(test_router)
 api_router.include_router(auth_router)
+api_router.include_router(notification_router)
 api_router.include_router(media_router)
 api_router.include_router(hospital_router)
 api_router.include_router(doctor_router)

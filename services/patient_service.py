@@ -2,8 +2,11 @@ from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
 
 from models.appointments import Appointments, AppointmentStatus
+from models.notifications import NotificationType
 from models.patients import Patients
+from models.users import UserRole
 from schemas.patient import PatientUpdate
+from services.notification_service import create_notification, notify_role
 from utils.file_storage import (
     delete_file_by_url,
     delete_user_folder,
@@ -31,6 +34,16 @@ def verify_patient(patient_id: int, session: Session):
     session.add(patient)
     session.commit()
     session.refresh(patient)
+
+    create_notification(
+        session,
+        patient.user_id,
+        NotificationType.patient_verified,
+        "You're verified!",
+        "Your identity has been verified. You can fully access mediSyncer now.",
+        related_id=patient.id,
+        related_type="patient",
+    )
     return {"message": f"{patient.name} has been verified.."}
 
 
@@ -80,6 +93,15 @@ async def request_patient_verification(
     session.commit()
     session.refresh(patient)
 
+    notify_role(
+        session,
+        UserRole.admin,
+        NotificationType.patient_verification_requested,
+        "New patient verification request",
+        f"{patient.name} submitted citizenship documents for verification.",
+        related_id=patient.id,
+        related_type="patient",
+    )
     return patient
 
 

@@ -24,6 +24,7 @@ from models import (
     Hospitals,
     Medical_History,
     Medications,
+    Notifications,
     Patients,
     Prescriptions,
     Timeslots,
