@@ -3,6 +3,21 @@ from sqlmodel import Session, select
 
 from models.notifications import Notifications, NotificationType
 from models.users import UserRole, Users
+from utils.ws_manager import manager
+
+
+def _broadcast(notification: Notifications):
+    payload = {
+        "id": notification.id,
+        "type": notification.type.value,
+        "title": notification.title,
+        "message": notification.message,
+        "related_id": notification.related_id,
+        "related_type": notification.related_type,
+        "is_read": notification.is_read,
+        "created_at": notification.created_at.isoformat(),
+    }
+    manager.schedule_send(notification.user_id, payload)
 
 
 def create_notification(
@@ -25,6 +40,9 @@ def create_notification(
     session.add(notification)
     session.commit()
     session.refresh(notification)
+
+    _broadcast(notification)
+
     return notification
 
 
@@ -59,6 +77,7 @@ def notify_role(
     session.commit()
     for n in notifications:
         session.refresh(n)
+        _broadcast(n)
 
     return notifications
 

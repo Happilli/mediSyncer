@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -7,10 +8,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.v1 import api_router
+from utils.ws_manager import manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    manager.loop = asyncio.get_running_loop()
     print("starting mediSyncer")
     print("Database schema managed by alembic")
     print("run-> alembic upgrade head")
