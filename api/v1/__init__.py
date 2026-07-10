@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from api.v1.routes.admin import router as admin_router
 from api.v1.routes.appointment import router as appointment_router
 from api.v1.routes.auth import router as auth_router
 from api.v1.routes.consultation import router as consultation_router
@@ -29,3 +30,4 @@ api_router.include_router(medication_router)
 api_router.include_router(prescription_router)
 api_router.include_router(consultation_router)
 api_router.include_router(medical_history_router)
+api_router.include_router(admin_router)

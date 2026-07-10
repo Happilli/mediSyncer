@@ -1,6 +1,5 @@
 from fastapi import HTTPException, UploadFile
-from sqlmodel import Session, delete, select
-from starlette.types import HTTPExceptionHandler
+from sqlmodel import Session, select
 
 from models.doctors import Doctors
 from models.hospitals import Hospitals
@@ -130,6 +129,7 @@ def delete_hospital(hospital_id: int, session: Session):
     if hospital is None:
         raise HTTPException(status_code=404, detail="Hospital not found to delete...")
 
+    hospital_name = hospital.name
     doctors = session.exec(
         select(Doctors).where(Doctors.hospital_id == hospital_id)
     ).all()
@@ -150,5 +150,5 @@ def delete_hospital(hospital_id: int, session: Session):
         delete_user_folder(uid)
 
     return {
-        "message": f"{hospital.name} and all the associated doctors have been nuked from mediSync platform.."
+        "message": f"{hospital_name} and all the associated doctors have been nuked from mediSync platform.."
     }

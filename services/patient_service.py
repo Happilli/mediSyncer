@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.notifications import NotificationType
 from models.patients import Patients
-from models.users import UserRole
+from models.users import UserRole, Users
 from schemas.patient import PatientUpdate
 from services.notification_service import create_notification, notify_role
 from utils.file_storage import (
@@ -121,12 +121,12 @@ async def update_patient_profile_pic(
 
 
 def delete_patient(patient_id: int, session: Session):
-    from models.users import Users
 
     patient = session.get(Patients, patient_id)
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient is not found..")
 
+    patient_name = patient.name
     user_id = patient.user_id
     user = session.get(Users, user_id)
     if user is not None:
@@ -136,5 +136,5 @@ def delete_patient(patient_id: int, session: Session):
     delete_user_folder(user_id)
 
     return {
-        "message": f"{patient.name} and all associated records have been nuked from the mediSync platform.."
+        "message": f"{patient_name} and all associated records have been nuked from the mediSync platform.."
     }
