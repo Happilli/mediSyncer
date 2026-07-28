@@ -8,6 +8,7 @@ class HospitalRegister(BaseModel):
     address: str
     phone: str
     registration_number: str
+    security_answer: str | None = None
     website: str | None = None
     description: str | None = None
 
@@ -35,7 +36,13 @@ class HospitalUpdate(BaseModel):
     description: str | None = None
 
 
+class HospitalSecurityAnswerUpdate(BaseModel):
+    current_password: str
+    security_answer: str
+
+
 class HospitalDashboardOut(HospitalOut):
     total_doctors: int
     verified_doctors: int
     total_appointments: int
+    has_security_answer: bool

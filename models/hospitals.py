@@ -16,3 +16,4 @@ class Hospitals(SQLModel, table=True):
     image_url: Optional[str] = Field(default=None)
     is_active: bool = Field(default=False)
     registration_number: str = Field(unique=True, index=True)
+    security_answer_hash: Optional[str] = Field(default=None, exclude=True)

@@ -4,14 +4,18 @@ from sqlmodel import Session, select
 from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.users import UserRole, Users
-from schemas.hospital import HospitalRegister, HospitalUpdate
+from schemas.hospital import (
+    HospitalRegister,
+    HospitalSecurityAnswerUpdate,
+    HospitalUpdate,
+)
 from utils.file_storage import (
     create_user_folder,
     delete_file_by_url,
     delete_user_folder,
     save_verification_doc,
 )
-from utils.security import hash_password
+from utils.security import hash_password, verify_password
 
 
 def register_hospital(data: HospitalRegister, session: Session):
@@ -51,7 +55,13 @@ def register_hospital(data: HospitalRegister, session: Session):
         website=data.website,
         description=data.description,
         is_active=True,
+        security_answer_hash=(
+            hash_password(data.security_answer.strip().lower())
+            if data.security_answer
+            else None
+        ),
     )
+
     session.add(hospital)
     session.commit()
     session.refresh(hospital)
@@ -87,6 +97,23 @@ def update_hospital_profile(
     return hospital
 
 
+def update_hospital_security_answer(
+    hospital: Hospitals,
+    user: Users,
+    data: HospitalSecurityAnswerUpdate,
+    session: Session,
+):
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+    hospital.security_answer_hash = hash_password(data.security_answer.strip().lower())
+    session.add(hospital)
+    session.commit()
+    session.refresh(hospital)
+
+    return {"message": "Security answer updated."}
+
+
 def get_hospital_dashboard(hospital: Hospitals, session: Session):
     from models.appointments import Appointments
     from models.doctors import Doctors
@@ -103,6 +130,7 @@ def get_hospital_dashboard(hospital: Hospitals, session: Session):
 
     return {
         **hospital.model_dump(),
+        "has_security_answer": hospital.security_answer_hash is not None,
         "total_doctors": len(total_doctors),
         "verified_doctors": len(verified_doctors),
         "total_appointments": len(total_appointments),

@@ -9,6 +9,7 @@ from schemas.hospital import (
     HospitalDashboardOut,
     HospitalOut,
     HospitalRegister,
+    HospitalSecurityAnswerUpdate,
     HospitalUpdate,
 )
 from services.doctor_service import (
@@ -24,8 +25,9 @@ from services.hospital_service import (
     register_hospital,
     update_hospital_image,
     update_hospital_profile,
+    update_hospital_security_answer,
 )
-from utils.dependencies import get_own_hospital_profile, require_admin
+from utils.dependencies import get_current_user, get_own_hospital_profile, require_admin
 
 router = APIRouter(prefix="/hospitals", tags=["hospitals"])
 
@@ -92,6 +94,16 @@ def update_my_hospital_profile(
     hospital: Hospitals = Depends(get_own_hospital_profile),
 ):
     return update_hospital_profile(hospital, data, session)
+
+
+@router.patch("/me/security-answer")
+def update_my_security_answer(
+    data: HospitalSecurityAnswerUpdate,
+    session: Session = Depends(get_session),
+    hospital: Hospitals = Depends(get_own_hospital_profile),
+    current_user: Users = Depends(get_current_user),
+):
+    return update_hospital_security_answer(hospital, current_user, data, session)
 
 
 @router.patch("/me/image", response_model=HospitalOut)
