@@ -115,3 +115,16 @@ def forgot_password_verify(
     session.commit()
 
     return {"message": "Password has been reset. You can now log in."}
+
+
+def change_password(
+    current_password: str, new_password: str, current_user: Users, session: Session
+):
+    if not verify_password(current_password, current_user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+    current_user.password_hash = hash_password(new_password)
+    session.add(current_user)
+    session.commit()
+
+    return {"message": "Password has been changed."}

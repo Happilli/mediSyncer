@@ -5,6 +5,7 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+
 class ForgotPasswordCheckRequest(BaseModel):
     email: EmailStr
 
@@ -16,4 +17,9 @@ class ForgotPasswordCheckOut(BaseModel):
 class ForgotPasswordVerifyRequest(BaseModel):
     email: EmailStr
     security_answer: str
+    new_password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
     new_password: str
