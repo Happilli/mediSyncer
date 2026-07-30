@@ -15,6 +15,13 @@ from utils.file_storage import (
 from utils.security import hash_password, verify_password
 
 
+def patient_to_out(patient: Patients) -> dict:
+    return {
+        **patient.model_dump(),
+        "has_security_answer": patient.security_answer_hash is not None,
+    }
+
+
 def list_all_patients(session: Session):
     return session.exec(select(Patients)).all()
 

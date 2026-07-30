@@ -233,6 +233,7 @@ def get_my_profile(doctor: Doctors, session: Session):
         **doctor.model_dump(),
         "patients_this_month": len(patients_this_month),
         "total_patients": len(total_patients),
+        "has_security_answer": doctor.security_answer_hash is not None,
     }
 
 

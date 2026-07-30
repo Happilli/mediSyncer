@@ -17,6 +17,7 @@ from services.patient_service import (
     get_patient_admin,
     list_all_patients,
     list_treated_patients,
+    patient_to_out,
     request_patient_verification,
     update_patient_profile,
     update_patient_profile_pic,
@@ -35,7 +36,7 @@ router = APIRouter(prefix="/patients", tags=["patients"])
 
 @router.get("/me", response_model=PatientOut)
 def my_patient_profile(patient: Patients = Depends(get_own_patient_profile)):
-    return patient
+    return patient_to_out(patient)
 
 
 @router.patch("/me", response_model=PatientOut)

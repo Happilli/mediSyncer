@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.patients import Patients
 from models.users import UserRole, Users
@@ -8,7 +9,25 @@ from schemas.patient import PatientRegister
 from utils.file_storage import create_user_folder
 from utils.security import create_access_token, hash_password, verify_password
 
-SECURITY_QUESTION = "What is your favorite medical term?"
+SECURITY_QUESTIONS = {
+    UserRole.patient: "What is your emergency contact's nickname?",
+    UserRole.doctor: "What was the name of your first patient or mentor?",
+    UserRole.hospital: "What is your favorite medical term?",
+}
+
+
+_PROFILE_MODEL = {
+    UserRole.patient: Patients,
+    UserRole.doctor: Doctors,
+    UserRole.hospital: Hospitals,
+}
+
+
+def _get_profile_for_user(user: Users, session: Session):
+    model = _PROFILE_MODEL.get(user.role)
+    if model is None:
+        return None
+    return session.exec(select(model).where(model.user_id == user.id)).first()
 
 
 def register_patient(data: PatientRegister, session: Session):
@@ -71,43 +90,35 @@ def login_user(email: str, password: str, session: Session):
 
 def forgot_password_check(email: str, session: Session):
     user = session.exec(select(Users).where(Users.email == email)).first()
-    if user is None or user.role != UserRole.hospital:
-        raise HTTPException(
-            status_code=404, detail="No hospital account found with this email."
-        )
+    if user is None or user.role not in SECURITY_QUESTIONS:
+        raise HTTPException(status_code=404, detail="No account found with this email.")
 
-    hospital = session.exec(
-        select(Hospitals).where(Hospitals.user_id == user.id)
-    ).first()
-    if hospital is None or hospital.security_answer_hash is None:
+    profile = _get_profile_for_user(user, session)
+    if profile is None or profile.security_answer_hash is None:
         raise HTTPException(
             status_code=400,
             detail="This account has no security answer set up. Contact support.",
         )
 
-    return {"question": SECURITY_QUESTION}
+    return {"question": SECURITY_QUESTIONS[user.role]}
 
 
 def forgot_password_verify(
     email: str, security_answer: str, new_password: str, session: Session
 ):
     user = session.exec(select(Users).where(Users.email == email)).first()
-    if user is None or user.role != UserRole.hospital:
-        raise HTTPException(
-            status_code=404, detail="No hospital account found with this email."
-        )
+    if user is None or user.role not in SECURITY_QUESTIONS:
+        raise HTTPException(status_code=404, detail="No account found with this email.")
 
-    hospital = session.exec(
-        select(Hospitals).where(Hospitals.user_id == user.id)
-    ).first()
-    if hospital is None or hospital.security_answer_hash is None:
+    profile = _get_profile_for_user(user, session)
+    if profile is None or profile.security_answer_hash is None:
         raise HTTPException(
             status_code=400,
             detail="This account has no security answer set up. Contact support.",
         )
 
     normalized_answer = security_answer.strip().lower()
-    if not verify_password(normalized_answer, hospital.security_answer_hash):
+    if not verify_password(normalized_answer, profile.security_answer_hash):
         raise HTTPException(status_code=401, detail="That answer isn't correct.")
 
     user.password_hash = hash_password(new_password)
