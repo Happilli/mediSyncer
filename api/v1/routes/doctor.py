@@ -8,6 +8,7 @@ from schemas.doctor import (
     DoctorOut,
     DoctorProfileOut,
     DoctorRegister,
+    DoctorSecurityAnswerUpdate,
     DoctorUpdate,
     TimeSlotCreate,
     TimeSlotOut,
@@ -21,8 +22,10 @@ from services.doctor_service import (
     register_doctor,
     update_doctor_profile,
     update_doctor_profile_pic,
+    update_doctor_security_answer,
 )
 from utils.dependencies import (
+    get_current_user,
     get_own_doctor_profile,
     require_hospital,
     required_verified_doctor,
@@ -127,3 +130,13 @@ async def update_my_doctor_profile_pic(
     doctor: Doctors = Depends(get_own_doctor_profile),
 ):
     return await update_doctor_profile_pic(doctor, file, session)
+
+
+@router.patch("/me/security-answer")
+def update_my_security_answer(
+    data: DoctorSecurityAnswerUpdate,
+    session: Session = Depends(get_session),
+    doctor: Doctors = Depends(get_own_doctor_profile),
+    current_user: Users = Depends(get_current_user),
+):
+    return update_doctor_security_answer(doctor, current_user, data, session)

@@ -10,6 +10,7 @@ class DoctorRegister(BaseModel):
     phone: str
     department: str
     speciality: str
+    security_answer: str | None = None
     bio: str
     address: str
     license_number: str | None = None
@@ -63,6 +64,7 @@ class DoctorAdminOut(DoctorOut):
 class DoctorProfileOut(DoctorOut):
     patients_this_month: int
     total_patients: int
+    has_security_answer: bool = False
 
 
 class DoctorListItemOut(BaseModel):
@@ -73,3 +75,8 @@ class DoctorListItemOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DoctorSecurityAnswerUpdate(BaseModel):
+    current_password: str
+    security_answer: str

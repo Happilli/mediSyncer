@@ -10,7 +10,12 @@ from models.hospitals import Hospitals
 from models.notifications import NotificationType
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
-from schemas.doctor import DoctorRegister, DoctorUpdate, TimeSlotCreate
+from schemas.doctor import (
+    DoctorRegister,
+    DoctorSecurityAnswerUpdate,
+    DoctorUpdate,
+    TimeSlotCreate,
+)
 from services.notification_service import (
     create_notification,
     notify_hospital,
@@ -21,7 +26,7 @@ from utils.file_storage import (
     delete_file_by_url,
     save_verification_doc,
 )
-from utils.security import hash_password
+from utils.security import hash_password, verify_password
 
 
 async def register_doctor(
@@ -271,3 +276,17 @@ def get_doctor_admin(hospital_id: int, doctor_id: int, session: Session):
             status_code=404, detail="Doctor doesn't belong to this hospital."
         )
     return doctor
+
+
+def update_doctor_security_answer(
+    doctor: Doctors, user: Users, data: DoctorSecurityAnswerUpdate, session: Session
+):
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="current password is incorrect.")
+
+    doctor.security_answer_hash = hash_password(data.security_answer.strip().lower())
+    session.add(doctor)
+    session.commit()
+    session.refresh(doctor)
+
+    return {"message": "Security answer has been updated.."}

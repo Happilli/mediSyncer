@@ -9,6 +9,7 @@ from schemas.patient import (
     PatientListItemOut,
     PatientOut,
     PatientPublicOut,
+    PatientSecurityAnswerUpdate,
     PatientUpdate,
 )
 from services.patient_service import (
@@ -19,9 +20,11 @@ from services.patient_service import (
     request_patient_verification,
     update_patient_profile,
     update_patient_profile_pic,
+    update_patient_security_answer,
     verify_patient,
 )
 from utils.dependencies import (
+    get_current_user,
     get_own_patient_profile,
     require_admin,
     required_verified_doctor,
@@ -107,3 +110,13 @@ def delete_patient_route(
     _: Users = Depends(require_admin),
 ):
     return delete_patient(patient_id, session)
+
+
+@router.patch("/me/security-answer")
+def update_my_security_answer(
+    data: PatientSecurityAnswerUpdate,
+    session: Session = Depends(get_session),
+    patient: Patients = Depends(get_own_patient_profile),
+    current_user: Users = Depends(get_current_user),
+):
+    return update_patient_security_answer(patient, current_user, data, session)

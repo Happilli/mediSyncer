@@ -5,13 +5,14 @@ from models.appointments import Appointments, AppointmentStatus
 from models.notifications import NotificationType
 from models.patients import Patients
 from models.users import UserRole, Users
-from schemas.patient import PatientUpdate
+from schemas.patient import PatientSecurityAnswerUpdate, PatientUpdate
 from services.notification_service import create_notification, notify_role
 from utils.file_storage import (
     delete_file_by_url,
     delete_user_folder,
     save_verification_doc,
 )
+from utils.security import hash_password, verify_password
 
 
 def list_all_patients(session: Session):
@@ -118,6 +119,20 @@ async def update_patient_profile_pic(
 
     delete_file_by_url(old_url)
     return patient
+
+
+def update_patient_security_answer(
+    patient: Patients, user: Users, data: PatientSecurityAnswerUpdate, session: Session
+):
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="current password is incorrect.")
+
+    patient.security_answer_hash = hash_password(data.security_answer.strip().lower())
+    session.add(patient)
+    session.commit()
+    session.refresh(patient)
+
+    return {"message": "Security answer has been updated.."}
 
 
 def delete_patient(patient_id: int, session: Session):

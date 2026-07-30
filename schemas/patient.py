@@ -13,6 +13,7 @@ class PatientRegister(BaseModel):
     address: str
     date_of_birth: date
     gender: Gender
+    security_answer: str | None = None
     blood_group: BloodGroup
     emergency_contact: str
 
@@ -44,6 +45,7 @@ class PatientOut(BaseModel):
     citizenship_number: str | None = None
     citizenship_photo_url: str | None = None
     is_verified: bool
+    has_security_answer: bool = False
 
     class Config:
         from_attributes = True
@@ -77,3 +79,8 @@ class PatientListItemOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PatientSecurityAnswerUpdate(BaseModel):
+    current_password: str
+    security_answer: str
