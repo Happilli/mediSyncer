@@ -38,3 +38,4 @@ class Patients(SQLModel, table=True):
     citizenship_number: Optional[str] = Field(default=None)
     citizenship_photo_url: Optional[str] = Field(default=None)
     is_verified: bool = Field(default=False)
+    security_answer_hash: Optional[str] = Field(default=None, exclude=True)

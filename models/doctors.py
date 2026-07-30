@@ -22,3 +22,4 @@ class Doctors(SQLModel, table=True):
     license_photo_url: Optional[str] = Field(default=None)
     is_verified: bool = Field(default=False)
     profile_pic_url: Optional[str] = Field(default=None)
+    security_answer_hash: Optional[str] = Field(default=None, exclude=True)
