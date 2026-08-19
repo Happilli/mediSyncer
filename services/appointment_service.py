@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -10,6 +10,30 @@ from models.patients import Patients
 from models.timeslots import Timeslots
 from schemas.appointment import AppointmentCreate
 from services.notification_service import create_notification, notify_hospital
+
+
+def _expire_stale_pending(session: Session):
+    now = datetime.now(timezone.utc)
+    stale = session.exec(
+        select(Appointments).where(
+            Appointments.status == AppointmentStatus.pending,
+            Appointments.appointment_at < now,
+        )
+    ).all()
+    for appt in stale:
+        appt.status = AppointmentStatus.cancelled
+        session.add(appt)
+        slot = session.exec(
+            select(Timeslots).where(
+                Timeslots.doctor_id == appt.doctor_id,
+                Timeslots.appointment_at == appt.appointment_at,
+            )
+        ).first()
+        if slot:
+            slot.is_available = True
+            session.add(slot)
+    if stale:
+        session.commit()
 
 
 def book_appointment(data: AppointmentCreate, patient: Patients, session: Session):
@@ -70,6 +94,8 @@ def list_my_appointment(
     filter_date: date | None = None,
     status: AppointmentStatus | None = None,
 ):
+
+    _expire_stale_pending(session)
     query = select(Appointments)
     if patient_id is not None:
         query = query.where(Appointments.patient_id == patient_id)
@@ -78,8 +104,8 @@ def list_my_appointment(
         query = query.where(Appointments.doctor_id == doctor_id)
 
     if filter_date is not None:
-        day_start = datetime.combine(filter_date, time.min)
-        day_end = datetime.combine(filter_date, time.max)
+        day_start = datetime.combine(filter_date, time.min, tzinfo=timezone.utc)
+        day_end = datetime.combine(filter_date, time.max, tzinfo=timezone.utc)
         query = query.where(
             Appointments.appointment_at >= day_start,
             Appointments.appointment_at <= day_end,

@@ -18,5 +18,3 @@ class Medications(SQLModel, table=True):
     instruction: str
     frequency_per_day: int = Field(ge=1, le=6)
     duration_days: int = Field(ge=1)
-    is_taken: bool = Field(default=False)
-    taken_at: datetime | None = None

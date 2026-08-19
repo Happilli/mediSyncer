@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
+from models.medication_logs import MedicationLogs
 from models.medications import Medications
 from models.notifications import NotificationType
 from models.patients import Patients
@@ -18,8 +19,23 @@ from schemas.prescription import (
 from services.notification_service import create_notification, notify_hospital
 
 
+def _medication_to_out(medication: Medications, session: Session) -> MedicationOut:
+    today = date.today()
+    log = session.exec(
+        select(MedicationLogs).where(
+            MedicationLogs.medication_id == medication.id,
+            MedicationLogs.log_date == today,
+        )
+    ).first()
+    return MedicationOut(
+        **medication.model_dump(),
+        is_taken=log is not None and log.taken_at is not None,
+        taken_at=log.taken_at if log is not None else None,
+    )
+
+
 def _to_detail(
-    prescription: Prescriptions, medications: list[Medications]
+    prescription: Prescriptions, medications: list[Medications], session: Session
 ) -> PrescriptionDetailOut:
     return PrescriptionDetailOut(
         id=prescription.id,
@@ -30,7 +46,7 @@ def _to_detail(
         instructions=prescription.instructions,
         created_at=prescription.created_at,
         follow_up_date=prescription.follow_up_date,
-        medications=[MedicationOut.model_validate(m) for m in medications],
+        medications=[_medication_to_out(m, session) for m in medications],
     )
 
 
@@ -123,7 +139,7 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
         related_type="prescription",
     )
 
-    return _to_detail(prescription, medications)
+    return _to_detail(prescription, medications, session)
 
 
 def list_my_prescriptions(patient: Patients, session: Session):
@@ -159,4 +175,4 @@ def get_prescription_detail(
     medications = session.exec(
         select(Medications).where(Medications.prescription_id == prescription_id)
     ).all()
-    return _to_detail(prescription, medications)
+    return _to_detail(prescription, medications, session)

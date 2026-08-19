@@ -23,8 +23,9 @@ class Appointments(SQLModel, table=True):
     hospital_id: int = Field(
         sa_column=Column(Integer, ForeignKey("hospitals.id", ondelete="CASCADE"))
     )
-    appointment_at: datetime
-
+    appointment_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
     status: AppointmentStatus = Field(default=AppointmentStatus.pending)
     notes: Optional[str] = Field(default=None)
     created_at: datetime = Field(

@@ -29,6 +29,7 @@ from models import (
     Prescriptions,
     Timeslots,
     Users,
+    MedicationLogs
 )
 
 # this is the Alembic Config object, which provides

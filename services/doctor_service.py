@@ -205,6 +205,7 @@ def list_doctor_timeslots(
 
     if available_only:
         query = query.where(Timeslots.is_available == True)
+        query = query.where(Timeslots.appointment_at >= datetime.now(timezone.utc))
 
     query = query.order_by(Timeslots.appointment_at)
     return session.exec(query).all()

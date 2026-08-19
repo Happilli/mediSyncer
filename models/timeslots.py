@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
+from sqlmodel import Column, DateTime, Field, ForeignKey, Integer, SQLModel
 
 
 class Timeslots(SQLModel, table=True):
@@ -12,5 +12,7 @@ class Timeslots(SQLModel, table=True):
     hospital_id: int = Field(
         sa_column=Column(Integer, ForeignKey("hospitals.id", ondelete="CASCADE"))
     )
-    appointment_at: datetime
+    appointment_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
     is_available: bool = Field(default=True)

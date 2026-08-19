@@ -1,8 +1,8 @@
-"""model upload
+"""make appointment_at timezone-aware
 
-Revision ID: 3f9a5005d5de
+Revision ID: 538309c8bb82
 Revises: 
-Create Date: 2026-07-02 04:16:58.251318
+Create Date: 2026-08-19 13:13:01.184412
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3f9a5005d5de'
+revision: str = '538309c8bb82'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -44,10 +44,24 @@ def upgrade() -> None:
     sa.Column('image_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('registration_number', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('security_answer_hash', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_hospitals_registration_number'), 'hospitals', ['registration_number'], unique=True)
+    op.create_table('notifications',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('type', sa.Enum('appointment_booked', 'appointment_confirmed', 'appointment_cancelled', 'appointment_completed', 'doctor_registered', 'doctor_verified', 'patient_verification_requested', 'patient_verified', 'consultation_created', 'prescription_created', 'system', name='notificationtype'), nullable=False),
+    sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('message', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('related_id', sa.Integer(), nullable=True),
+    sa.Column('related_type', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('is_read', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('patients',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
@@ -62,6 +76,7 @@ def upgrade() -> None:
     sa.Column('citizenship_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('citizenship_photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('security_answer_hash', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -80,6 +95,7 @@ def upgrade() -> None:
     sa.Column('license_photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.Column('profile_pic_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('security_answer_hash', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.ForeignKeyConstraint(['hospital_id'], ['hospitals.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -89,7 +105,7 @@ def upgrade() -> None:
     sa.Column('doctor_id', sa.Integer(), nullable=True),
     sa.Column('patient_id', sa.Integer(), nullable=True),
     sa.Column('hospital_id', sa.Integer(), nullable=True),
-    sa.Column('appointment_at', sa.DateTime(), nullable=False),
+    sa.Column('appointment_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('status', sa.Enum('pending', 'confirmed', 'cancelled', 'completed', name='appointmentstatus'), nullable=False),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
@@ -121,7 +137,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('doctor_id', sa.Integer(), nullable=True),
     sa.Column('hospital_id', sa.Integer(), nullable=True),
-    sa.Column('appointment_at', sa.DateTime(), nullable=False),
+    sa.Column('appointment_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('is_available', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['doctor_id'], ['doctors.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['hospital_id'], ['hospitals.id'], ondelete='CASCADE'),
@@ -170,11 +186,20 @@ def upgrade() -> None:
     sa.Column('instruction', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('frequency_per_day', sa.Integer(), nullable=False),
     sa.Column('duration_days', sa.Integer(), nullable=False),
-    sa.Column('is_taken', sa.Boolean(), nullable=False),
-    sa.Column('taken_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['prescription_id'], ['prescriptions.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('medicationlogs',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('medication_id', sa.Integer(), nullable=True),
+    sa.Column('patient_id', sa.Integer(), nullable=True),
+    sa.Column('log_date', sa.Date(), nullable=False),
+    sa.Column('taken_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['medication_id'], ['medications.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('medication_id', 'log_date', name='uq_medication_log_date)')
     )
     # ### end Alembic commands ###
 
@@ -182,6 +207,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('medicationlogs')
     op.drop_table('medications')
     op.drop_table('prescriptions')
     op.drop_table('consultations')
@@ -191,6 +217,7 @@ def downgrade() -> None:
     op.drop_table('appointments')
     op.drop_table('doctors')
     op.drop_table('patients')
+    op.drop_table('notifications')
     op.drop_index(op.f('ix_hospitals_registration_number'), table_name='hospitals')
     op.drop_table('hospitals')
     op.drop_index(op.f('ix_users_email'), table_name='users')
