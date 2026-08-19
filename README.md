@@ -8,5 +8,8 @@ setup Instructions:
 - `alembic upgrade head`
 - `python3 main.py`
 
+# for using?
+- use the swagger /docs route to see all the api's and its mechanicsm...
+
 # for development?
 - formatting -> ruff_format, ruff_organize_imports

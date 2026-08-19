@@ -57,6 +57,11 @@ def register_patient(data: PatientRegister, session: Session):
         gender=data.gender,
         blood_group=data.blood_group,
         emergency_contact=data.emergency_contact,
+        security_answer_hash=(
+            hash_password(data.security_answer.strip().lower())
+            if data.security_answer
+            else None
+        ),
     )
     session.add(patient)
     session.commit()
