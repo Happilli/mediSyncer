@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class DoctorRegister(BaseModel):
@@ -36,6 +36,15 @@ class DoctorOut(BaseModel):
 
 class TimeSlotCreate(BaseModel):
     appointment_at: datetime
+
+    @field_validator("appointment_at")
+    @classmethod
+    def must_be_future(cls, v: datetime) -> datetime:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        if v <= datetime.now(timezone.utc):
+            raise ValueError("appointment_at must be in the future")
+        return v
 
 
 class TimeSlotOut(BaseModel):
