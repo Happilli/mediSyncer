@@ -75,7 +75,17 @@ def list_treated_patients(doctor_id: int, session: Session):
         )
         .distinct()
     ).all()
-    return patients
+
+    result = []
+    for p in patients:
+        user = session.get(Users, p.user_id)
+        result.append(
+            {
+                **p.model_dump(),
+                "email": user.email if user else "",
+            }
+        )
+    return result
 
 
 async def request_patient_verification(

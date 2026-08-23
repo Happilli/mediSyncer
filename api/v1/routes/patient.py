@@ -55,15 +55,6 @@ def get_all_patients(
     return list_all_patients(session)
 
 
-@router.get("/{patient_id}", response_model=PatientOut)
-def get_patient_detail(
-    patient_id: int,
-    session: Session = Depends(get_session),
-    _: Users = Depends(require_admin),
-):
-    return get_patient_admin(patient_id, session)
-
-
 @router.post("/{patient_id}/verify", status_code=200)
 def verify_patient_route(
     patient_id: int,
@@ -81,6 +72,15 @@ def my_treated_patients(
     if doctor.id is None:
         raise HTTPException(status_code=500, detail="Doctor id missing")
     return list_treated_patients(doctor.id, session)
+
+
+@router.get("/{patient_id}", response_model=PatientOut)
+def get_patient_detail(
+    patient_id: int,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return get_patient_admin(patient_id, session)
 
 
 @router.post("/request-verification", response_model=PatientOut)

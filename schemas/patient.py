@@ -62,6 +62,9 @@ class PatientPublicOut(BaseModel):
     id: int
     name: str
     phone: str
+    email: str
+    address: str
+    date_of_birth: date
     gender: Gender
     blood_group: BloodGroup
     emergency_contact: str
