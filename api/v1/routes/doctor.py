@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from database import get_session
 from models.doctors import Doctors
+from models.hospitals import Hospitals
 from models.users import Users
 from schemas.doctor import (
     DoctorOut,
@@ -19,6 +20,7 @@ from services.doctor_service import (
     get_my_profile,
     list_doctor_timeslots,
     list_doctors,
+    list_doctors_for_own_hospital,
     register_doctor,
     update_doctor_profile,
     update_doctor_profile_pic,
@@ -27,6 +29,7 @@ from services.doctor_service import (
 from utils.dependencies import (
     get_current_user,
     get_own_doctor_profile,
+    get_own_hospital_profile,
     require_hospital,
     required_verified_doctor,
 )
@@ -109,6 +112,14 @@ def add_timeslot(
     doctor: Doctors = Depends(required_verified_doctor),
 ):
     return create_timeslot(data, doctor, session)
+
+
+@router.get("/mine", response_model=list[DoctorOut])
+def get_my_hospital_doctors(
+    hospital: Hospitals = Depends(get_own_hospital_profile),
+    session: Session = Depends(get_session),
+):
+    return list_doctors_for_own_hospital(hospital, session)
 
 
 @router.get("/{doctor_id}", response_model=DoctorOut)

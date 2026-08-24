@@ -126,6 +126,10 @@ def list_doctors(
     return session.exec(query).all()
 
 
+def list_doctors_for_own_hospital(hospital: Hospitals, session: Session):
+    return session.exec(select(Doctors).where(Doctors.hospital_id == hospital.id)).all()
+
+
 def get_doctor(doctor_id: int, session: Session):
     doctor = session.exec(
         select(Doctors).where(Doctors.id == doctor_id, Doctors.is_verified == True)
