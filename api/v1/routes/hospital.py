@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile,  HTTPException
 from sqlmodel import Session
 
 from database import get_session
