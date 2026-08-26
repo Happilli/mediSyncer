@@ -6,21 +6,25 @@ from sqlmodel import Session
 from database import get_session
 from models.appointments import AppointmentStatus
 from models.doctors import Doctors
+from models.hospitals import Hospitals
 from models.patients import Patients
 from models.users import Users
 from schemas.appointment import (
     AppointmentCreate,
     AppointmentOut,
     AppointmentStatusUpdate,
+    HospitalAppointmentOut,
 )
 from services.appointment_service import (
     book_appointment,
     get_appointments,
+    list_hospital_appointments,
     list_my_appointment,
     update_appointment_status,
 )
 from utils.dependencies import (
     get_current_user,
+    get_own_hospital_profile,
     required_verified_doctor,
     required_verified_patient,
 )
@@ -64,6 +68,24 @@ def my_appointments_as_doctor(
         session,
         patient_id=None,
         doctor_id=doctor.id,
+        filter_date=filter_date,
+        status=status,
+    )
+
+
+@router.get(
+    "/hospital",
+    response_model=list[HospitalAppointmentOut],
+)
+def hospital_appointments(
+    filter_date: date | None = None,
+    status: AppointmentStatus | None = None,
+    session: Session = Depends(get_session),
+    hospital: Hospitals = Depends(get_own_hospital_profile),
+):
+    return list_hospital_appointments(
+        session,
+        hospital_id=hospital.id,
         filter_date=filter_date,
         status=status,
     )
