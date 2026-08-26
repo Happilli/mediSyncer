@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Optional
+
 from pydantic import BaseModel
 
 from models.appointments import AppointmentStatus
@@ -25,3 +27,26 @@ class AppointmentOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AppointmentPatientOut(BaseModel):
+    id: int
+    name: str
+    phone: str
+
+
+class AppointmentDoctorOut(BaseModel):
+    id: int
+    name: str
+    department: str
+    speciality: str
+
+
+class HospitalAppointmentOut(BaseModel):
+    id: int
+    patient: AppointmentPatientOut
+    doctor: AppointmentDoctorOut
+    hospital_id: int
+    appointment_at: datetime
+    status: AppointmentStatus
+    notes: Optional[str] = None

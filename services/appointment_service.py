@@ -117,6 +117,73 @@ def list_my_appointment(
     return session.exec(query).all()
 
 
+def list_hospital_appointments(
+    session: Session,
+    hospital_id: int,
+    filter_date: date | None = None,
+    status: AppointmentStatus | None = None,
+):
+    _expire_stale_pending(session)
+
+    query = (
+        select(Appointments, Doctors, Patients)
+        .join(Doctors, Doctors.id == Appointments.doctor_id)
+        .join(Patients, Patients.id == Appointments.patient_id)
+        .where(Appointments.hospital_id == hospital_id)
+    )
+
+    if filter_date is not None:
+        day_start = datetime.combine(
+            filter_date,
+            time.min,
+            tzinfo=timezone.utc,
+        )
+        day_end = datetime.combine(
+            filter_date,
+            time.max,
+            tzinfo=timezone.utc,
+        )
+
+        query = query.where(
+            Appointments.appointment_at >= day_start,
+            Appointments.appointment_at <= day_end,
+        )
+
+    if status is not None:
+        query = query.where(
+            Appointments.status == status
+        )
+
+    query = query.order_by(
+        Appointments.appointment_at.desc()
+    )
+
+    results = session.exec(query).all()
+
+    return [
+        {
+            "id": appointment.id,
+            "patient": {
+                "id": patient.id,
+                "name": patient.name,
+                "phone": patient.phone,
+            },
+            "doctor": {
+                "id": doctor.id,
+                "name": doctor.name,
+                "department": doctor.department,
+                "speciality": doctor.speciality,
+            },
+            "hospital_id": appointment.hospital_id,
+            "appointment_at": appointment.appointment_at,
+            "status": appointment.status,
+            "notes": appointment.notes,
+        }
+        for appointment, doctor, patient in results
+    ]
+
+
+
 def get_appointments(
     appointment_id: int, session: Session, current_user_id: int, current_role: str
 ):
