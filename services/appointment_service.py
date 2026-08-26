@@ -8,7 +8,12 @@ from models.doctors import Doctors
 from models.notifications import NotificationType
 from models.patients import Patients
 from models.timeslots import Timeslots
-from schemas.appointment import AppointmentCreate
+from schemas.appointment import (
+    AppointmentCreate,
+    AppointmentDoctorOut,
+    AppointmentPatientOut,
+    HospitalAppointmentOut,
+)
 from services.notification_service import create_notification, notify_hospital
 
 
@@ -133,55 +138,39 @@ def list_hospital_appointments(
     )
 
     if filter_date is not None:
-        day_start = datetime.combine(
-            filter_date,
-            time.min,
-            tzinfo=timezone.utc,
-        )
-        day_end = datetime.combine(
-            filter_date,
-            time.max,
-            tzinfo=timezone.utc,
-        )
-
+        day_start = datetime.combine(filter_date, time.min, tzinfo=timezone.utc)
+        day_end = datetime.combine(filter_date, time.max, tzinfo=timezone.utc)
         query = query.where(
             Appointments.appointment_at >= day_start,
             Appointments.appointment_at <= day_end,
         )
 
     if status is not None:
-        query = query.where(
-            Appointments.status == status
-        )
+        query = query.where(Appointments.status == status)
 
-    query = query.order_by(
-        Appointments.appointment_at.desc()
-    )
+    query = query.order_by(Appointments.appointment_at.desc())
 
     results = session.exec(query).all()
 
     return [
-        {
-            "id": appointment.id,
-            "patient": {
-                "id": patient.id,
-                "name": patient.name,
-                "phone": patient.phone,
-            },
-            "doctor": {
-                "id": doctor.id,
-                "name": doctor.name,
-                "department": doctor.department,
-                "speciality": doctor.speciality,
-            },
-            "hospital_id": appointment.hospital_id,
-            "appointment_at": appointment.appointment_at,
-            "status": appointment.status,
-            "notes": appointment.notes,
-        }
+        HospitalAppointmentOut(
+            id=appointment.id,
+            patient=AppointmentPatientOut(
+                id=patient.id, name=patient.name, phone=patient.phone
+            ),
+            doctor=AppointmentDoctorOut(
+                id=doctor.id,
+                name=doctor.name,
+                department=doctor.department,
+                speciality=doctor.speciality,
+            ),
+            hospital_id=appointment.hospital_id,
+            appointment_at=appointment.appointment_at,
+            status=appointment.status,
+            notes=appointment.notes,
+        )
         for appointment, doctor, patient in results
     ]
-
 
 
 def get_appointments(

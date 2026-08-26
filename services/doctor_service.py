@@ -11,10 +11,11 @@ from models.notifications import NotificationType
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import (
+    DoctorHospitalAdminUpdate,
+    DoctorOut,
     DoctorRegister,
     DoctorSecurityAnswerUpdate,
     DoctorUpdate,
-    DoctorAdminUpdate,
     TimeSlotCreate,
 )
 from services.notification_service import (
@@ -142,13 +143,7 @@ def get_doctor(doctor_id: int, session: Session):
 
 
 def verify_doctor(hospital_id: int, doctor_id: int, session: Session):
-    doctor = session.get(Doctors, doctor_id)
-    if doctor is None:
-        raise HTTPException(status_code=404, detail="Doctor not found")
-    if doctor.hospital_id != hospital_id:
-        raise HTTPException(
-            status_code=404, detail="Doctor dosnt belong to this hospital."
-        )
+    doctor = get_doctor_admin(hospital_id, doctor_id, session)
     doctor.is_verified = True
     session.add(doctor)
     session.commit()
@@ -252,10 +247,11 @@ def update_doctor_profile(doctor: Doctors, data: DoctorUpdate, session: Session)
     session.commit()
     session.refresh(doctor)
     return doctor
-    
+
+
 def update_doctor_admin(
     doctor: Doctors,
-    data: DoctorAdminUpdate,
+    data: DoctorHospitalAdminUpdate,
     session: Session,
 ):
     update_data = data.model_dump(exclude_unset=True)
@@ -268,6 +264,7 @@ def update_doctor_admin(
     session.refresh(doctor)
 
     return doctor
+
 
 async def update_doctor_profile_pic(
     doctor: Doctors, file: UploadFile, session: Session
@@ -300,15 +297,12 @@ def get_doctor_admin(hospital_id: int, doctor_id: int, session: Session):
         )
     return doctor
 
+
 def delete_doctor_admin(
     hospital_id: int,
     doctor_id: int,
     session: Session,
 ):
-    # --------------------------------
-    # Find doctor
-    # --------------------------------
-
     doctor = session.get(Doctors, doctor_id)
 
     if doctor is None:
@@ -317,60 +311,32 @@ def delete_doctor_admin(
             detail="Doctor not found.",
         )
 
-    # --------------------------------
-    # Make sure doctor belongs
-    # to this hospital
-    # --------------------------------
-
     if doctor.hospital_id != hospital_id:
         raise HTTPException(
             status_code=404,
             detail="Doctor doesn't belong to this hospital.",
         )
 
-    # --------------------------------
-    # Doctor with appointments
-    # cannot be deleted
-    # --------------------------------
-
     appointment = session.exec(
-        select(Appointments).where(
-            Appointments.doctor_id == doctor_id
-        )
+        select(Appointments).where(Appointments.doctor_id == doctor_id)
     ).first()
 
     if appointment:
         raise HTTPException(
             status_code=409,
             detail=(
-                "This doctor cannot be deleted because "
-                "they have existing appointments."
+                "This doctor cannot be deleted because they have existing appointments."
             ),
         )
 
-    # --------------------------------
-    # Save values before deleting
-    # --------------------------------
-
     doctor_name = doctor.name
     user_id = doctor.user_id
-
-    # --------------------------------
-    # Delete doctor's timeslots
-    # --------------------------------
-
     timeslots = session.exec(
-        select(Timeslots).where(
-            Timeslots.doctor_id == doctor_id
-        )
+        select(Timeslots).where(Timeslots.doctor_id == doctor_id)
     ).all()
 
     for timeslot in timeslots:
         session.delete(timeslot)
-
-    # --------------------------------
-    # Delete hospital-doctor relation
-    # --------------------------------
 
     doctor_hospital = session.exec(
         select(Doctor_Hospital).where(
@@ -382,36 +348,16 @@ def delete_doctor_admin(
     if doctor_hospital:
         session.delete(doctor_hospital)
 
-    # --------------------------------
-    # Delete doctor
-    # --------------------------------
-
     session.delete(doctor)
-
-    # --------------------------------
-    # Delete associated user account
-    # --------------------------------
-
     user = session.get(Users, user_id)
 
     if user:
         session.delete(user)
 
-    # --------------------------------
-    # Commit database changes
-    # --------------------------------
-
     session.commit()
-
-    # --------------------------------
-    # Delete doctor's storage folder
-    # --------------------------------
-
     delete_user_folder(user_id)
 
-    return {
-        "message": f"{doctor_name} has been deleted successfully."
-    }
+    return {"message": f"{doctor_name} has been deleted successfully."}
 
 
 def update_doctor_security_answer(

@@ -2,24 +2,22 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlmodel import Session
 
 from database import get_session
-
 from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.users import Users
-
 from schemas.doctor import (
+    DoctorHospitalAdminUpdate,
     DoctorOut,
     DoctorProfileOut,
     DoctorRegister,
     DoctorSecurityAnswerUpdate,
     DoctorUpdate,
-    DoctorAdminUpdate,
     TimeSlotCreate,
     TimeSlotOut,
 )
-
 from services.doctor_service import (
     create_timeslot,
+    delete_doctor_admin,
     get_doctor,
     get_doctor_admin,
     get_my_profile,
@@ -27,13 +25,11 @@ from services.doctor_service import (
     list_doctors,
     list_doctors_for_own_hospital,
     register_doctor,
-    update_doctor_profile,
     update_doctor_admin,
-    delete_doctor_admin,
+    update_doctor_profile,
     update_doctor_profile_pic,
     update_doctor_security_answer,
 )
-
 from utils.dependencies import (
     get_current_user,
     get_own_doctor_profile,
@@ -42,16 +38,11 @@ from utils.dependencies import (
     required_verified_doctor,
 )
 
-
 router = APIRouter(
     prefix="/doctors",
     tags=["doctors"],
 )
 
-
-# --------------------------------
-# Register doctor
-# --------------------------------
 
 @router.post("/register", status_code=201)
 async def register_hospital_doctor(
@@ -90,10 +81,6 @@ async def register_hospital_doctor(
     )
 
 
-# --------------------------------
-# Get doctors
-# --------------------------------
-
 @router.get("/", response_model=list[DoctorOut])
 def get_doctors(
     hospital_id: int | None = None,
@@ -111,10 +98,6 @@ def get_doctors(
     )
 
 
-# --------------------------------
-# Doctor's own profile
-# --------------------------------
-
 @router.get("/me", response_model=DoctorProfileOut)
 def my_doctor_profile(
     doctor: Doctors = Depends(get_own_doctor_profile),
@@ -125,10 +108,6 @@ def my_doctor_profile(
         session,
     )
 
-
-# --------------------------------
-# Doctor updates own profile
-# --------------------------------
 
 @router.patch("/me", response_model=DoctorOut)
 def update_my_doctor_profile(
@@ -142,10 +121,6 @@ def update_my_doctor_profile(
         session,
     )
 
-
-# --------------------------------
-# Doctor creates timeslot
-# --------------------------------
 
 @router.post(
     "/me/timeslots",
@@ -164,11 +139,6 @@ def add_timeslot(
     )
 
 
-# --------------------------------
-# Get doctors belonging to
-# the logged-in hospital
-# --------------------------------
-
 @router.get(
     "/mine",
     response_model=list[DoctorOut],
@@ -183,17 +153,13 @@ def get_my_hospital_doctors(
     )
 
 
-# --------------------------------
-# Hospital Admin edits doctor
-# --------------------------------
-
 @router.patch(
     "/{doctor_id}",
     response_model=DoctorOut,
 )
 def update_hospital_doctor(
     doctor_id: int,
-    data: DoctorAdminUpdate,
+    data: DoctorHospitalAdminUpdate,
     hospital: Hospitals = Depends(get_own_hospital_profile),
     session: Session = Depends(get_session),
 ):
@@ -202,17 +168,12 @@ def update_hospital_doctor(
         doctor_id,
         session,
     )
-
     return update_doctor_admin(
         doctor,
         data,
         session,
     )
 
-
-# --------------------------------
-# Hospital Admin deletes doctor
-# --------------------------------
 
 @router.delete(
     "/{doctor_id}",
@@ -228,16 +189,13 @@ def delete_hospital_doctor(
         session,
     )
 
-# --------------------------------
-# Get single doctor
-# --------------------------------
 
 @router.get(
     "/{doctor_id}",
     response_model=DoctorOut,
 )
 def get_doctor_detail(
-    doctor_id: int, 
+    doctor_id: int,
     session: Session = Depends(get_session),
 ):
     return get_doctor(
@@ -245,10 +203,6 @@ def get_doctor_detail(
         session,
     )
 
-
-# --------------------------------
-# Get doctor's timeslots
-# --------------------------------
 
 @router.get(
     "/{doctor_id}/timeslots",
@@ -266,10 +220,6 @@ def get_doctor_timeslots(
     )
 
 
-# --------------------------------
-# Doctor updates profile picture
-# --------------------------------
-
 @router.patch(
     "/me/profile-pic",
     response_model=DoctorOut,
@@ -286,10 +236,6 @@ async def update_my_doctor_profile_pic(
     )
 
 
-# --------------------------------
-# Doctor updates security answer
-# --------------------------------
-
 @router.patch("/me/security-answer")
 def update_my_security_answer(
     data: DoctorSecurityAnswerUpdate,
@@ -303,4 +249,3 @@ def update_my_security_answer(
         data,
         session,
     )
-

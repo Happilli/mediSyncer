@@ -64,14 +64,11 @@ class DoctorUpdate(BaseModel):
     address: str | None = None
     years_experience: int | None = None
 
-class DoctorAdminUpdate(BaseModel):
+
+class DoctorHospitalAdminUpdate(DoctorUpdate):
     name: str | None = None
-    phone: str | None = None
     department: str | None = None
     speciality: str | None = None
-    bio: str | None = None
-    address: str | None = None
-    years_experience: int | None = None
 
 
 class DoctorAdminOut(DoctorOut):

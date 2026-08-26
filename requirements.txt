@@ -58,7 +58,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.7.0
 uvicorn==0.47.0
-winloop==0.6.3
+uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.0
 wrapt==2.2.2
