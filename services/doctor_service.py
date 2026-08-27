@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
 
-from models.appointments import Appointments
+from models.appointments import Appointments, AppointmentStatus
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
 from models.hospitals import Hospitals
@@ -216,9 +216,14 @@ def get_my_profile(doctor: Doctors, session: Session):
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+    real_patient_statuses = [AppointmentStatus.confirmed, AppointmentStatus.completed]
+
     total_patients = session.exec(
         select(Appointments.patient_id)
-        .where(Appointments.doctor_id == doctor.id)
+        .where(
+            Appointments.doctor_id == doctor.id,
+            Appointments.status.in_(real_patient_statuses),
+        )
         .distinct()
     ).all()
 
@@ -226,6 +231,7 @@ def get_my_profile(doctor: Doctors, session: Session):
         select(Appointments.patient_id)
         .where(
             Appointments.doctor_id == doctor.id,
+            Appointments.status.in_(real_patient_statuses),
             Appointments.appointment_at >= month_start,
         )
         .distinct()

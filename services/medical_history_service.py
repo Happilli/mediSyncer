@@ -19,17 +19,16 @@ def list_patient_history_for_doctor(patient_id: int, doctor: Doctors, session: S
     if doctor.id is None:
         raise HTTPException(status_code=500, detail="Doctor id is missing..")
 
-    treated = session.exec(
+    has_relationship = session.exec(
         select(Appointments).where(
             Appointments.doctor_id == doctor.id,
             Appointments.patient_id == patient_id,
-            Appointments.status == AppointmentStatus.completed,
         )
     ).first()
-    if treated is None:
+    if has_relationship is None:
         raise HTTPException(
             status_code=403,
-            detail="You can only access the patient, you have treated so far..",
+            detail="You can only view history for patients who have booked an appointment with you.",
         )
     return session.exec(
         select(Medical_History)
