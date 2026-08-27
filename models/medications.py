@@ -1,3 +1,4 @@
+from datetime import date as dihh
 from datetime import datetime, time
 from typing import Optional
 
@@ -18,3 +19,4 @@ class Medications(SQLModel, table=True):
     instruction: str
     frequency_per_day: int = Field(ge=1, le=6)
     duration_days: int = Field(ge=1)
+    start_date: dihh = Field(default_factory=dihh.today)

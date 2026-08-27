@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import date, datetime, time
 
 from pydantic import BaseModel
 
@@ -22,8 +22,11 @@ class MedicationOut(BaseModel):
     instruction: str
     frequency_per_day: int
     duration_days: int
+    start_date: date
+    end_date: date
     is_taken: bool
     taken_at: datetime | None = None
+    is_active: bool
 
     class Config:
         from_attributes = True
