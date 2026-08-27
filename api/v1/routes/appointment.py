@@ -18,6 +18,7 @@ from schemas.appointment import (
 from services.appointment_service import (
     book_appointment,
     get_appointments,
+    get_weekly_hospital_appointments,
     list_hospital_appointments,
     list_my_appointment,
     update_appointment_status,
@@ -88,6 +89,17 @@ def hospital_appointments(
         hospital_id=hospital.id,
         filter_date=filter_date,
         status=status,
+    )
+
+
+@router.get("/hospital/weekly")
+def hospital_weekly_appointments(
+    session: Session = Depends(get_session),
+    hospital: Hospitals = Depends(get_own_hospital_profile),
+):
+    return get_weekly_hospital_appointments(
+        session,
+        hospital_id=hospital.id,
     )
 
 

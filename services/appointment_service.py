@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -170,6 +170,64 @@ def list_hospital_appointments(
             notes=appointment.notes,
         )
         for appointment, doctor, patient in results
+    ]
+
+
+def get_weekly_hospital_appointments(
+    session: Session,
+    hospital_id: int,
+):
+    _expire_stale_pending(session)
+
+    now = datetime.now(timezone.utc)
+
+    # Monday = 0, Sunday = 6
+    week_start = datetime.combine(
+        now.date(),
+        time.min,
+        tzinfo=timezone.utc,
+    )
+
+    week_start = week_start.replace(
+        day=now.day
+    )
+
+    week_start = week_start - __import__("datetime").timedelta(
+        days=now.weekday()
+    )
+
+    week_end = week_start + __import__("datetime").timedelta(days=7)
+
+    appointments = session.exec(
+        select(Appointments).where(
+            Appointments.hospital_id == hospital_id,
+            Appointments.appointment_at >= week_start,
+            Appointments.appointment_at < week_end,
+        )
+    ).all()
+
+    counts = {
+        "Mon": 0,
+        "Tue": 0,
+        "Wed": 0,
+        "Thu": 0,
+        "Fri": 0,
+        "Sat": 0,
+        "Sun": 0,
+    }
+
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    for appointment in appointments:
+        day = day_names[appointment.appointment_at.weekday()]
+        counts[day] += 1
+
+    return [
+        {
+            "day": day,
+            "appointments": counts[day],
+        }
+        for day in day_names
     ]
 
 
