@@ -15,6 +15,8 @@ from schemas.patient import (
 from services.patient_service import (
     delete_patient,
     get_patient_admin,
+    get_patient_for_doctor,
+    list_all_my_patients,
     list_all_patients,
     list_treated_patients,
     patient_to_out,
@@ -62,6 +64,27 @@ def verify_patient_route(
     _: Users = Depends(require_admin),
 ):
     return verify_patient(patient_id, session)
+
+
+@router.get("/doctor", response_model=list[PatientPublicOut])
+def my_doctor_patients(
+    session: Session = Depends(get_session),
+    doctor: Doctors = Depends(required_verified_doctor),
+):
+    if doctor.id is None:
+        raise HTTPException(status_code=500, detail="Doctor id missing")
+    return list_all_my_patients(doctor.id, session)
+
+
+@router.get("/doctor/{patient_id}", response_model=PatientPublicOut)
+def my_doctor_patient_detail(
+    patient_id: int,
+    session: Session = Depends(get_session),
+    doctor: Doctors = Depends(required_verified_doctor),
+):
+    if doctor.id is None:
+        raise HTTPException(status_code=500, detail="Doctor id missing")
+    return get_patient_for_doctor(patient_id, doctor.id, session)
 
 
 @router.get("/treated", response_model=list[PatientPublicOut])

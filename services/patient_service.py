@@ -65,6 +65,38 @@ def update_patient_profile(patient: Patients, data: PatientUpdate, session: Sess
     return patient
 
 
+def list_all_my_patients(doctor_id: int, session: Session):
+    patients = session.exec(
+        select(Patients)
+        .join(Appointments, Appointments.patient_id == Patients.id)
+        .where(Appointments.doctor_id == doctor_id)
+        .distinct()
+    ).all()
+    result = []
+    for p in patients:
+        user = session.get(Users, p.user_id)
+        result.append({**p.model_dump(), "email": user.email if user else ""})
+    return result
+
+
+def get_patient_for_doctor(patient_id: int, doctor_id: int, session: Session):
+    has_appt = session.exec(
+        select(Appointments).where(
+            Appointments.doctor_id == doctor_id,
+            Appointments.patient_id == patient_id,
+        )
+    ).first()
+    if has_appt is None:
+        raise HTTPException(status_code=403, detail="Not your patient.")
+
+    patient = session.get(Patients, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient is not found..")
+
+    user = session.get(Users, patient.user_id)
+    return {**patient.model_dump(), "email": user.email if user else ""}
+
+
 def list_treated_patients(doctor_id: int, session: Session):
     patients = session.exec(
         select(Patients)
