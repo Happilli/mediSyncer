@@ -30,12 +30,17 @@ def _medication_to_out(medication: Medications, session: Session) -> MedicationO
 
     end_date = medication.start_date + timedelta(days=medication.duration_days - 1)
 
+    prescription = session.get(Prescriptions, medication.prescription_id)
+    doctor = session.get(Doctors, prescription.doctor_id) if prescription else None
+
     return MedicationOut(
         **medication.model_dump(),
         end_date=end_date,
         is_active=medication.start_date <= today <= end_date,
         is_taken=log is not None and log.taken_at is not None,
         taken_at=log.taken_at if log is not None else None,
+        doctor_id=doctor.id if doctor else 0,
+        doctor_name=doctor.name if doctor else "Unknown",
     )
 
 
