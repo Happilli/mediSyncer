@@ -27,6 +27,8 @@ class MedicationOut(BaseModel):
     is_taken: bool
     taken_at: datetime | None = None
     is_active: bool
+    doctor_id: int
+    doctor_name: str
 
     class Config:
         from_attributes = True
