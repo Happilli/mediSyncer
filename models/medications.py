@@ -15,8 +15,6 @@ class Medications(SQLModel, table=True):
     )
     name: str
     dosage: str
-    dosage_time: time
     instruction: str
-    frequency_per_day: int = Field(ge=1, le=6)
     duration_days: int = Field(ge=1)
     start_date: dihh = Field(default_factory=dihh.today)

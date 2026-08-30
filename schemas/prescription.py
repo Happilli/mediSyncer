@@ -1,25 +1,38 @@
 from datetime import date, datetime, time
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+class MedicationTimeCreate(BaseModel):
+    dosage_time: time
+    label: str | None = None
 
 
 class MedicationCreate(BaseModel):
     name: str
     dosage: str
-    dosage_time: time
     instruction: str
-    frequency_per_day: int
     duration_days: int
+    dosage_times: list[MedicationTimeCreate]
+
+    @field_validator("dosage_times")
+    @classmethod
+    def at_least_one_time(cls, v):
+        if not v:
+            raise ValueError("At least one dosage time is required")
+        return v
 
 
 class MedicationOut(BaseModel):
-    id: int
+    schedule_id: int
+    medication_id: int
     prescription_id: int
     patient_id: int
     name: str
     dosage: str
-    dosage_time: time
     instruction: str
+    dosage_time: time
+    label: str | None = None
     frequency_per_day: int
     duration_days: int
     start_date: date

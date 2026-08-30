@@ -24,12 +24,12 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
         )
 
     existing = session.exec(
-        select(Consultations.appointment_id == data.appointment_id)
+        select(Consultations).where(Consultations.appointment_id == data.appointment_id)
     ).first()
 
     if existing:
         raise HTTPException(
-            status_code=400,
+            status_code=409,
             detail="Consultations already exists for this appointment..",
         )
 

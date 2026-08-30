@@ -11,17 +11,18 @@ from sqlmodel import (
     Integer,
     SQLModel,
     UniqueConstraint,
-    column,
 )
 
 
 class MedicationLogs(SQLModel, table=True):
     __table_args__ = (
-        UniqueConstraint("medication_id", "log_date", name="uq_medication_log_date)"),
+        UniqueConstraint(
+            "medication_time_id", "log_date", name="uq_medication_time_log_date"
+        ),
     )
     id: Optional[int] = Field(default=None, primary_key=True)
-    medication_id: int = Field(
-        sa_column=Column(Integer, ForeignKey("medications.id", ondelete="CASCADE"))
+    medication_time_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("medicationtimes.id", ondelete="CASCADE"))
     )
     patient_id: int = Field(
         sa_column=Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"))

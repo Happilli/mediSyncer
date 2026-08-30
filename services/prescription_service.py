@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
-from models.medication_logs import MedicationLogs
+from models.medication_times import MedicationTimes
 from models.medications import Medications
 from models.notifications import NotificationType
 from models.patients import Patients
@@ -16,37 +16,26 @@ from schemas.prescription import (
     PrescriptionCreate,
     PrescriptionDetailOut,
 )
+from services.medication_service import _schedule_to_out
 from services.notification_service import create_notification, notify_hospital
 
 
-def _medication_to_out(medication: Medications, session: Session) -> MedicationOut:
-    today = date.today()
-    log = session.exec(
-        select(MedicationLogs).where(
-            MedicationLogs.medication_id == medication.id,
-            MedicationLogs.log_date == today,
-        )
-    ).first()
-
-    end_date = medication.start_date + timedelta(days=medication.duration_days - 1)
-
-    prescription = session.get(Prescriptions, medication.prescription_id)
-    doctor = session.get(Doctors, prescription.doctor_id) if prescription else None
-
-    return MedicationOut(
-        **medication.model_dump(),
-        end_date=end_date,
-        is_active=medication.start_date <= today <= end_date,
-        is_taken=log is not None and log.taken_at is not None,
-        taken_at=log.taken_at if log is not None else None,
-        doctor_id=doctor.id if doctor else 0,
-        doctor_name=doctor.name if doctor else "Unknown",
-    )
+def _medication_to_out_list(
+    medication: Medications, session: Session
+) -> list[MedicationOut]:
+    schedules = session.exec(
+        select(MedicationTimes).where(MedicationTimes.medication_id == medication.id)
+    ).all()
+    return [MedicationOut(**_schedule_to_out(s, session)) for s in schedules]
 
 
 def _to_detail(
     prescription: Prescriptions, medications: list[Medications], session: Session
 ) -> PrescriptionDetailOut:
+    all_meds: list[MedicationOut] = []
+    for m in medications:
+        all_meds.extend(_medication_to_out_list(m, session))
+
     return PrescriptionDetailOut(
         id=prescription.id,
         doctor_id=prescription.doctor_id,
@@ -56,7 +45,7 @@ def _to_detail(
         instructions=prescription.instructions,
         created_at=prescription.created_at,
         follow_up_date=prescription.follow_up_date,
-        medications=[_medication_to_out(m, session) for m in medications],
+        medications=all_meds,
     )
 
 
@@ -115,17 +104,24 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
             patient_id=appt.patient_id,
             name=med.name,
             dosage=med.dosage,
-            dosage_time=med.dosage_time,
             instruction=med.instruction,
-            frequency_per_day=med.frequency_per_day,
             duration_days=med.duration_days,
         )
         session.add(medication)
+        session.commit()
+        session.refresh(medication)
+
+        for t in med.dosage_times:
+            schedule = MedicationTimes(
+                medication_id=medication.id,
+                dosage_time=t.dosage_time,
+                label=t.label,
+            )
+            session.add(schedule)
+
         medications.append(medication)
 
     session.commit()
-    for m in medications:
-        session.refresh(m)
 
     patient = session.get(Patients, appt.patient_id)
     if patient is not None:

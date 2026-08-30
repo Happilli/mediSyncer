@@ -23,13 +23,14 @@ from models import (
     Doctors,
     Hospitals,
     Medical_History,
+    MedicationLogs,
     Medications,
+    MedicationTimes,
     Notifications,
     Patients,
     Prescriptions,
     Timeslots,
     Users,
-    MedicationLogs
 )
 
 # this is the Alembic Config object, which provides
