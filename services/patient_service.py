@@ -97,8 +97,8 @@ def get_patient_for_doctor(patient_id: int, doctor_id: int, session: Session):
     return {**patient.model_dump(), "email": user.email if user else ""}
 
 
-def list_treated_patients(doctor_id: int, session: Session):
-    patients = session.exec(
+def list_treated_patients(doctor_id: int, session: Session, search: str | None = None):
+    query = (
         select(Patients)
         .join(Appointments, Appointments.patient_id == Patients.id)
         .where(
@@ -106,7 +106,12 @@ def list_treated_patients(doctor_id: int, session: Session):
             Appointments.status == AppointmentStatus.completed,
         )
         .distinct()
-    ).all()
+    )
+
+    if search:
+        query = query.where(Patients.name.like(f"%{search}%"))
+
+    patients = session.exec(query).all()
 
     result = []
     for p in patients:

@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
@@ -35,10 +37,13 @@ def create_new_prescription(
 
 @router.get("/me", response_model=list[PrescriptionOut])
 def my_prescriptions(
+    doctor_id: int | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
     session: Session = Depends(get_session),
     patient: Patients = Depends(required_verified_patient),
 ):
-    return list_my_prescriptions(patient, session)
+    return list_my_prescriptions(patient, session, doctor_id, from_date, to_date)
 
 
 @router.get("/{prescription_id}", response_model=PrescriptionDetailOut)

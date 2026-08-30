@@ -89,12 +89,13 @@ def my_doctor_patient_detail(
 
 @router.get("/treated", response_model=list[PatientPublicOut])
 def my_treated_patients(
+    search: str | None = None,
     session: Session = Depends(get_session),
     doctor: Doctors = Depends(required_verified_doctor),
 ):
     if doctor.id is None:
         raise HTTPException(status_code=500, detail="Doctor id missing")
-    return list_treated_patients(doctor.id, session)
+    return list_treated_patients(doctor.id, session, search)
 
 
 @router.get("/{patient_id}", response_model=PatientOut)

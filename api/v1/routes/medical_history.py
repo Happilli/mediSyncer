@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
@@ -16,10 +18,12 @@ router = APIRouter(prefix="/medical-history", tags=["medical-history"])
 
 @router.get("/me", response_model=list[MedicalHistoryOut])
 def my_medical_history(
+    doctor_id: int | None = None,
+    from_date: date | None = None,
     session: Session = Depends(get_session),
     patient: Patients = Depends(required_verified_patient),
 ):
-    return list_my_history(patient, session)
+    return list_my_history(patient, session, doctor_id, from_date)
 
 
 @router.get("/patient/{patient_id}", response_model=list[MedicalHistoryOut])

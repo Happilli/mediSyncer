@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 
 from fastapi import HTTPException, UploadFile
 from sqlmodel import Session, select
@@ -199,17 +199,19 @@ def create_timeslot(data: TimeSlotCreate, doctor: Doctors, session: Session):
     return slot
 
 
-def list_doctor_timeslots(
-    doctor_id: int, session: Session, available_only: bool = True
-):
+def list_doctor_timeslots(doctor_id, session, available_only=True, filter_date=None):
     query = select(Timeslots).where(Timeslots.doctor_id == doctor_id)
-
     if available_only:
         query = query.where(Timeslots.is_available == True)
         query = query.where(Timeslots.appointment_at >= datetime.now(timezone.utc))
-
-    query = query.order_by(Timeslots.appointment_at)
-    return session.exec(query).all()
+    if filter_date is not None:
+        day_start = datetime.combine(filter_date, time.min, tzinfo=timezone.utc)
+        day_end = datetime.combine(filter_date, time.max, tzinfo=timezone.utc)
+        query = query.where(
+            Timeslots.appointment_at >= day_start,
+            Timeslots.appointment_at <= day_end,
+        )
+    return session.exec(query.order_by(Timeslots.appointment_at)).all()
 
 
 def get_my_profile(doctor: Doctors, session: Session):

@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlmodel import Session
 
@@ -204,20 +206,14 @@ def get_doctor_detail(
     )
 
 
-@router.get(
-    "/{doctor_id}/timeslots",
-    response_model=list[TimeSlotOut],
-)
+@router.get("/{doctor_id}/timeslots", response_model=list[TimeSlotOut])
 def get_doctor_timeslots(
     doctor_id: int,
     available_only: bool = True,
+    filter_date: date | None = None,
     session: Session = Depends(get_session),
 ):
-    return list_doctor_timeslots(
-        doctor_id,
-        session,
-        available_only,
-    )
+    return list_doctor_timeslots(doctor_id, session, available_only, filter_date)
 
 
 @router.patch(

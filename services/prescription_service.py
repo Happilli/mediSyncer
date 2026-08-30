@@ -152,12 +152,17 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
     return _to_detail(prescription, medications, session)
 
 
-def list_my_prescriptions(patient: Patients, session: Session):
-    return session.exec(
-        select(Prescriptions)
-        .where(Prescriptions.patient_id == patient.id)
-        .order_by(Prescriptions.created_at.desc())
-    ).all()
+def list_my_prescriptions(
+    patient, session, doctor_id=None, from_date=None, to_date=None
+):
+    query = select(Prescriptions).where(Prescriptions.patient_id == patient.id)
+    if doctor_id is not None:
+        query = query.where(Prescriptions.doctor_id == doctor_id)
+    if from_date is not None:
+        query = query.where(Prescriptions.created_at >= from_date)
+    if to_date is not None:
+        query = query.where(Prescriptions.created_at <= to_date)
+    return session.exec(query.order_by(Prescriptions.created_at.desc())).all()
 
 
 def get_prescription_detail(

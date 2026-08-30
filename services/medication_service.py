@@ -39,11 +39,14 @@ def _to_out(medication: Medications, session: Session) -> dict:
     }
 
 
-def list_my_medications(patient: Patients, session: Session):
+def list_my_medications(patient: Patients, session: Session, active_only: bool = False):
     medications = session.exec(
         select(Medications).where(Medications.patient_id == patient.id)
     ).all()
-    return [_to_out(m, session) for m in medications]
+    results = [_to_out(m, session) for m in medications]
+    if active_only:
+        results = [m for m in results if m["is_active"]]
+    return results
 
 
 def mark_medication_taken(medication_id: int, patient: Patients, session: Session):
