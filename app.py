@@ -9,7 +9,7 @@ from slowapi.util import get_remote_address
 
 from api.v1 import api_router
 from utils.ws_manager import manager
-
+from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +29,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.mount("/medias", StaticFiles(directory="serve"), name="medias")
 
 app.add_middleware(
     CORSMiddleware,
