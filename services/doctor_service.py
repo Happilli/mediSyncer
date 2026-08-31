@@ -1,13 +1,14 @@
 from datetime import datetime, time, timezone
 
 from fastapi import HTTPException, UploadFile
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from models.appointments import Appointments, AppointmentStatus
 from models.doctor_hospital import Doctor_Hospital
 from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.notifications import NotificationType
+from models.prescriptions import Prescriptions
 from models.timeslots import Timeslots
 from models.users import UserRole, Users
 from schemas.doctor import (
@@ -239,11 +240,20 @@ def get_my_profile(doctor: Doctors, session: Session):
         .distinct()
     ).all()
 
+    upcoming_followups = session.exec(
+        select(Prescriptions).where(
+            Prescriptions.doctor_id == doctor.id,
+            col(Prescriptions.follow_up_date).is_not(None),
+            col(Prescriptions.follow_up_date) >= now,
+        )
+    ).all()
+
     return {
         **doctor.model_dump(),
         "patients_this_month": len(patients_this_month),
         "total_patients": len(total_patients),
         "has_security_answer": doctor.security_answer_hash is not None,
+        "upcoming_followups": len(upcoming_followups),
     }
 
 

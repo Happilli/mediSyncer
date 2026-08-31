@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -78,15 +78,13 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
             detail="A Prescription already exists btw.",
         )
 
-    follow_up = data.follow_up_date or (datetime.now(timezone.utc) + timedelta(days=7))
-
     prescription = Prescriptions(
         doctor_id=doctor.id,
         appointment_id=data.appointment_id,
         patient_id=appt.patient_id,
         diagnosis=data.diagnosis,
         instructions=data.instructions,
-        follow_up_date=follow_up,
+        follow_up_date=data.follow_up_date,
     )
     appt.status = AppointmentStatus.completed
     session.add(appt)

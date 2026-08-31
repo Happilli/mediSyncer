@@ -63,7 +63,7 @@ class PrescriptionOut(BaseModel):
     diagnosis: str
     instructions: str
     created_at: datetime
-    follow_up_date: datetime
+    follow_up_date: datetime | None = None
 
     class Config:
         from_attributes = True

@@ -80,6 +80,7 @@ class DoctorProfileOut(DoctorOut):
     patients_this_month: int
     total_patients: int
     has_security_answer: bool = False
+    upcoming_followups: int = 0
 
 
 class DoctorListItemOut(BaseModel):
