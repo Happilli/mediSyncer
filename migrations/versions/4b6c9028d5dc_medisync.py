@@ -1,8 +1,8 @@
-"""updated model for prescription time flexibility
+"""medisync
 
-Revision ID: eb20f899b467
+Revision ID: 4b6c9028d5dc
 Revises: 
-Create Date: 2026-08-30 15:51:32.532509
+Create Date: 2026-09-01 11:42:50.890666
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'eb20f899b467'
+revision: str = '4b6c9028d5dc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -52,7 +52,7 @@ def upgrade() -> None:
     op.create_table('notifications',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('type', sa.Enum('appointment_booked', 'appointment_confirmed', 'appointment_cancelled', 'appointment_completed', 'doctor_registered', 'doctor_verified', 'patient_verification_requested', 'patient_verified', 'consultation_created', 'prescription_created', 'system', name='notificationtype'), nullable=False),
+    sa.Column('type', sa.Enum('appointment_booked', 'appointment_confirmed', 'appointment_cancelled', 'appointment_completed', 'doctor_registered', 'doctor_verified', 'patient_verification_requested', 'patient_verified', 'patient_verification_rejected', 'consultation_created', 'prescription_created', 'system', name='notificationtype'), nullable=False),
     sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('message', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('related_id', sa.Integer(), nullable=True),
@@ -76,6 +76,7 @@ def upgrade() -> None:
     sa.Column('citizenship_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('citizenship_photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('rejection_reason', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('security_answer_hash', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -170,7 +171,7 @@ def upgrade() -> None:
     sa.Column('diagnosis', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('instructions', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('follow_up_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('follow_up_date', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['appointment_id'], ['appointments.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['doctor_id'], ['doctors.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ondelete='CASCADE'),
