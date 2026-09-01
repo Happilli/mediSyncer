@@ -9,6 +9,7 @@ from schemas.patient import (
     PatientListItemOut,
     PatientOut,
     PatientPublicOut,
+    PatientRejectRequest,
     PatientSecurityAnswerUpdate,
     PatientUpdate,
 )
@@ -20,6 +21,7 @@ from services.patient_service import (
     list_all_patients,
     list_treated_patients,
     patient_to_out,
+    reject_patient,
     request_patient_verification,
     update_patient_profile,
     update_patient_profile_pic,
@@ -64,6 +66,16 @@ def verify_patient_route(
     _: Users = Depends(require_admin),
 ):
     return verify_patient(patient_id, session)
+
+
+@router.post("/{patient_id}/reject", status_code=200)
+def reject_patient_route(
+    patient_id: int,
+    data: PatientRejectRequest,
+    session: Session = Depends(get_session),
+    _: Users = Depends(require_admin),
+):
+    return reject_patient(patient_id, data.reason, session)
 
 
 @router.get("/doctor", response_model=list[PatientPublicOut])

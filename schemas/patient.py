@@ -45,6 +45,7 @@ class PatientOut(BaseModel):
     citizenship_number: str | None = None
     citizenship_photo_url: str | None = None
     is_verified: bool
+    rejection_reason: str | None = None
     has_security_answer: bool = False
 
     class Config:
@@ -87,3 +88,7 @@ class PatientListItemOut(BaseModel):
 class PatientSecurityAnswerUpdate(BaseModel):
     current_password: str
     security_answer: str
+
+
+class PatientRejectRequest(BaseModel):
+    reason: str | None = None

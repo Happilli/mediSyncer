@@ -39,6 +39,7 @@ def verify_patient(patient_id: int, session: Session):
         raise HTTPException(status_code=404, detail="Patient is not found..")
 
     patient.is_verified = True
+    patient.rejection_reason = None
     session.add(patient)
     session.commit()
     session.refresh(patient)
@@ -53,6 +54,48 @@ def verify_patient(patient_id: int, session: Session):
         related_type="patient",
     )
     return {"message": f"{patient.name} has been verified.."}
+
+
+def reject_patient(patient_id: int, reason: str | None, session: Session):
+    patient = session.get(Patients, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Patient is not found..")
+
+    if patient.is_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="This patient is already verified, cannot reject.",
+        )
+
+    if patient.citizenship_number is None and patient.citizenship_photo_url is None:
+        raise HTTPException(
+            status_code=400,
+            detail="This patient has no pending verification request to reject.",
+        )
+
+    old_photo_url = patient.citizenship_photo_url
+
+    patient.citizenship_number = None
+    patient.citizenship_photo_url = None
+    patient.rejection_reason = reason
+    session.add(patient)
+    session.commit()
+    session.refresh(patient)
+
+    delete_file_by_url(old_photo_url)
+
+    create_notification(
+        session,
+        patient.user_id,
+        NotificationType.patient_verification_rejected,
+        "Verification request rejected",
+        reason
+        if reason
+        else "Your verification request was rejected. Please review your documents and resubmit.",
+        related_id=patient.id,
+        related_type="patient",
+    )
+    return {"message": f"{patient.name}'s verification request has been rejected."}
 
 
 def update_patient_profile(patient: Patients, data: PatientUpdate, session: Session):
@@ -144,6 +187,7 @@ async def request_patient_verification(
 
     patient.citizenship_number = citizenship_number
     patient.citizenship_photo_url = photo_url
+    patient.rejection_reason = None
     session.add(patient)
     session.commit()
     session.refresh(patient)

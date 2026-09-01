@@ -14,6 +14,7 @@ class NotificationType(str, Enum):
     doctor_verified = "doctor_verified"
     patient_verification_requested = "patient_verification_requested"
     patient_verified = "patient_verified"
+    patient_verification_rejected = "patient_verification_rejected"
     consultation_created = "consultation_created"
     prescription_created = "prescription_created"
     system = "system"
