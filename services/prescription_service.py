@@ -55,10 +55,10 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
         raise HTTPException(status_code=404, detail="Appointment not found..")
     if appt.doctor_id != doctor.id:
         raise HTTPException(status_code=403, detail="Not your appointment..")
-    if appt.status != AppointmentStatus.confirmed:
+    if appt.status != AppointmentStatus.completed:
         raise HTTPException(
             status_code=400,
-            detail="Appointment must be confirmed before prescribing anything.",
+            detail="A consultation must be recorded before prescribing anything.",
         )
     consult = session.exec(
         select(Consultations).where(Consultations.appointment_id == data.appointment_id)
@@ -86,8 +86,7 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
         instructions=data.instructions,
         follow_up_date=data.follow_up_date,
     )
-    appt.status = AppointmentStatus.completed
-    session.add(appt)
+
     session.add(prescription)
     session.commit()
     session.refresh(prescription)

@@ -8,7 +8,7 @@ from models.medical_history import Medical_History
 from models.notifications import NotificationType
 from models.patients import Patients
 from schemas.consultation import ConsultationCreate
-from services.notification_service import notify_hospital
+from services.notification_service import create_notification, notify_hospital
 
 
 def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Session):
@@ -40,13 +40,17 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
         complaint=data.complaint,
         symptoms=data.symptoms,
         diagnosis=data.diagnosis,
-        notes=data.diagnosis,
+        notes=data.notes,
         blood_pressure=data.blood_pressure,
         heart_rate=data.heart_rate,
         temperature=data.temperature,
         weight=data.weight,
     )
     session.add(consultation)
+
+    appt.status = AppointmentStatus.completed
+    session.add(appt)
+
     session.commit()
     session.refresh(consultation)
 
@@ -58,6 +62,7 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
     history_entry = Medical_History(
         doctor_id=doctor.id,
         patient_id=appt.patient_id,
+        appointment_id=appt.id,
         title=data.diagnosis,
         description="|".join(desp),
     )
@@ -75,17 +80,46 @@ def create_consultation(data: ConsultationCreate, doctor: Doctors, session: Sess
         related_type="consultation",
     )
 
+    if patient is not None:
+        create_notification(
+            session,
+            patient.user_id,
+            NotificationType.appointment_completed,
+            "Appointment completed",
+            f"Dr. {doctor.name} has completed your consultation.",
+            related_id=appt.id,
+            related_type="appointment",
+        )
+
     return consultation
 
 
 def get_consultation_by_appointment(
-    appointment_id: int, doctor: Doctors, session: Session
+    appointment_id: int,
+    session: Session,
+    current_user_id: int,
+    current_role: str,
 ):
     consultation = session.exec(
         select(Consultations).where(Consultations.appointment_id == appointment_id)
     ).first()
     if consultation is None:
         raise HTTPException(status_code=404, detail="Consultation not found..")
-    if consultation.doctor_id != doctor.id:
-        raise HTTPException(status_code=403, detail="Not your consultation.")
+
+    if current_role == "doctor":
+        doctor = session.exec(
+            select(Doctors).where(Doctors.user_id == current_user_id)
+        ).first()
+        if doctor is None or consultation.doctor_id != doctor.id:
+            raise HTTPException(status_code=403, detail="Not your consultation.")
+    elif current_role == "patient":
+        appt = session.get(Appointments, consultation.appointment_id)
+        patient = session.exec(
+            select(Patients).where(Patients.user_id == current_user_id)
+        ).first()
+        if appt is None or patient is None or appt.patient_id != patient.id:
+            raise HTTPException(status_code=403, detail="Not your consultation.")
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized.")
+
     return consultation

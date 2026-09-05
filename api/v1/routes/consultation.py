@@ -3,12 +3,13 @@ from sqlmodel import Session
 
 from database import get_session
 from models.doctors import Doctors
+from models.users import Users
 from schemas.consultation import ConsultationCreate, ConsultationOut
 from services.consultation_service import (
     create_consultation,
     get_consultation_by_appointment,
 )
-from utils.dependencies import required_verified_doctor
+from utils.dependencies import get_current_user, required_verified_doctor
 
 router = APIRouter(prefix="/consultations", tags=["consultations"])
 
@@ -26,6 +27,8 @@ def create_new_consultation(
 def get_consultation_for_appointment(
     appointment_id: int,
     session: Session = Depends(get_session),
-    doctor: Doctors = Depends(required_verified_doctor),
+    current_user: Users = Depends(get_current_user),
 ):
-    return get_consultation_by_appointment(appointment_id, doctor, session)
+    return get_consultation_by_appointment(
+        appointment_id, session, current_user.id, current_user.role.value
+    )

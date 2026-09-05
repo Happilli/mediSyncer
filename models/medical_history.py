@@ -12,6 +12,10 @@ class Medical_History(SQLModel, table=True):
     patient_id: int = Field(
         sa_column=Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"))
     )
+    appointment_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, ForeignKey("appointments.id", ondelete="SET NULL")),
+    )
     title: str
     description: str
     date: datetime = Field(
