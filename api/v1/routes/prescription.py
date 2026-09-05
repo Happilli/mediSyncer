@@ -7,6 +7,7 @@ from database import get_session
 from models.doctors import Doctors
 from models.hospitals import Hospitals
 from models.patients import Patients
+from models.prescriptions import DispenseStatus
 from models.users import Users
 from schemas.prescription import (
     DispenseQueueItemOut,
@@ -54,10 +55,11 @@ def my_prescriptions(
 
 @router.get("/dispense-queue", response_model=list[DispenseQueueItemOut])
 def dispense_queue(
+    status: DispenseStatus = DispenseStatus.pending,
     session: Session = Depends(get_session),
     hospital: Hospitals = Depends(get_own_hospital_profile),
 ):
-    return get_dispense_queue(hospital.id, session)
+    return get_dispense_queue(hospital.id, session, status)
 
 
 @router.patch("/{prescription_id}/mark-ready", response_model=PrescriptionOut)
@@ -73,9 +75,9 @@ def mark_ready(
 def collect(
     prescription_id: int,
     session: Session = Depends(get_session),
-    patient: Patients = Depends(required_verified_patient),
+    hospital: Hospitals = Depends(get_own_hospital_profile),
 ):
-    return confirm_collection(prescription_id, patient, session)
+    return confirm_collection(prescription_id, hospital, session)
 
 
 @router.get("/{prescription_id}", response_model=PrescriptionDetailOut)

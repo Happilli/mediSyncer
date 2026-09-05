@@ -205,14 +205,14 @@ def get_prescription_detail(
 
 
 def get_dispense_queue(
-    hospital_id: int, session: Session
+    hospital_id: int, session: Session, status: DispenseStatus = DispenseStatus.pending
 ) -> list[DispenseQueueItemOut]:
     results = session.exec(
         select(Prescriptions, Patients)
         .join(Patients, Patients.id == Prescriptions.patient_id)
         .where(
             Prescriptions.hospital_id == hospital_id,
-            Prescriptions.dispense_status == DispenseStatus.pending,
+            Prescriptions.dispense_status == status,
         )
         .order_by(Prescriptions.created_at)
     ).all()
@@ -265,11 +265,11 @@ def mark_prescription_ready(prescription_id: int, hospital_id: int, session: Ses
     return prescription
 
 
-def confirm_collection(prescription_id: int, patient: Patients, session: Session):
+def confirm_collection(prescription_id: int, hospital: Hospitals, session: Session):
     prescription = session.get(Prescriptions, prescription_id)
     if prescription is None:
         raise HTTPException(status_code=404, detail="Prescription not found..")
-    if prescription.patient_id != patient.id:
+    if prescription.hospital_id != hospital.id:
         raise HTTPException(status_code=403, detail="Not your prescription.")
     if prescription.dispense_status != DispenseStatus.ready:
         raise HTTPException(
@@ -290,14 +290,16 @@ def confirm_collection(prescription_id: int, patient: Patients, session: Session
     session.commit()
     session.refresh(prescription)
 
-    notify_hospital(
-        session,
-        prescription.hospital_id,
-        NotificationType.prescription_collected,
-        "Prescription collected",
-        f"{patient.name} collected their prescription.",
-        related_id=prescription.id,
-        related_type="prescription",
-    )
+    patient = session.get(Patients, prescription.patient_id)
+    if patient is not None:
+        create_notification(
+            session,
+            patient.user_id,
+            NotificationType.prescription_collected,
+            "Medicines collected",
+            "Your prescription has been marked as collected at the hospital.",
+            related_id=prescription.id,
+            related_type="prescription",
+        )
 
     return prescription
