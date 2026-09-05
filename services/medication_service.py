@@ -39,6 +39,7 @@ def _schedule_to_out(schedule: MedicationTimes, session: Session) -> dict:
 
     prescription = session.get(Prescriptions, medication.prescription_id)
     doctor = session.get(Doctors, prescription.doctor_id) if prescription else None
+    dispense_status = prescription.dispense_status.value if prescription else None
 
     sibling_count = session.exec(
         select(MedicationTimes).where(MedicationTimes.medication_id == medication.id)
@@ -63,6 +64,7 @@ def _schedule_to_out(schedule: MedicationTimes, session: Session) -> dict:
         "taken_at": log.taken_at if log is not None else None,
         "doctor_id": doctor.id if doctor else 0,
         "doctor_name": doctor.name if doctor else "Unknown",
+        "dispense_status": dispense_status,
     }
 
 
@@ -72,7 +74,7 @@ def list_my_medications(patient: Patients, session: Session, active_only: bool =
         .join(Prescriptions, Prescriptions.id == Medications.prescription_id)
         .where(
             Medications.patient_id == patient.id,
-            Prescriptions.dispense_status == DispenseStatus.collected,
+            Prescriptions.dispense_status != DispenseStatus.not_required,
         )
     ).all()
 

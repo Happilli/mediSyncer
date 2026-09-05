@@ -25,6 +25,7 @@ class MedicationCreate(BaseModel):
         return v
 
 
+
 class MedicationOut(BaseModel):
     schedule_id: int
     medication_id: int
@@ -44,10 +45,10 @@ class MedicationOut(BaseModel):
     is_active: bool
     doctor_id: int
     doctor_name: str
+    dispense_status: str | None = None
 
     class Config:
         from_attributes = True
-
 
 class PrescriptionCreate(BaseModel):
     appointment_id: int
