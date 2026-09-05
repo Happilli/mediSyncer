@@ -17,6 +17,9 @@ class NotificationType(str, Enum):
     patient_verification_rejected = "patient_verification_rejected"
     consultation_created = "consultation_created"
     prescription_created = "prescription_created"
+    prescription_pending_dispense = "prescription_pending_dispense"
+    prescription_ready = "prescription_ready"
+    prescription_collected = "prescription_collected"
     system = "system"
 
 

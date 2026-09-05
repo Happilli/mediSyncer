@@ -8,7 +8,7 @@ from models.medication_logs import MedicationLogs
 from models.medication_times import MedicationTimes
 from models.medications import Medications
 from models.patients import Patients
-from models.prescriptions import Prescriptions
+from models.prescriptions import DispenseStatus, Prescriptions
 
 
 def _today_log(session: Session, schedule_id: int) -> MedicationLogs | None:
@@ -29,8 +29,13 @@ def _schedule_to_out(schedule: MedicationTimes, session: Session) -> dict:
         )
 
     log = _today_log(session, schedule.id)
-    end_date = medication.start_date + timedelta(days=medication.duration_days - 1)
     today = date.today()
+
+    end_date = None
+    is_active = False
+    if medication.start_date is not None:
+        end_date = medication.start_date + timedelta(days=medication.duration_days - 1)
+        is_active = medication.start_date <= today <= end_date
 
     prescription = session.get(Prescriptions, medication.prescription_id)
     doctor = session.get(Doctors, prescription.doctor_id) if prescription else None
@@ -53,7 +58,7 @@ def _schedule_to_out(schedule: MedicationTimes, session: Session) -> dict:
         "duration_days": medication.duration_days,
         "start_date": medication.start_date,
         "end_date": end_date,
-        "is_active": medication.start_date <= today <= end_date,
+        "is_active": is_active,
         "is_taken": log is not None and log.taken_at is not None,
         "taken_at": log.taken_at if log is not None else None,
         "doctor_id": doctor.id if doctor else 0,
@@ -63,7 +68,12 @@ def _schedule_to_out(schedule: MedicationTimes, session: Session) -> dict:
 
 def list_my_medications(patient: Patients, session: Session, active_only: bool = False):
     medications = session.exec(
-        select(Medications).where(Medications.patient_id == patient.id)
+        select(Medications)
+        .join(Prescriptions, Prescriptions.id == Medications.prescription_id)
+        .where(
+            Medications.patient_id == patient.id,
+            Prescriptions.dispense_status == DispenseStatus.collected,
+        )
     ).all()
 
     results = []
@@ -87,6 +97,12 @@ def mark_medication_taken(schedule_id: int, patient: Patients, session: Session)
     medication = session.get(Medications, schedule.medication_id)
     if medication is None or medication.patient_id != patient.id:
         raise HTTPException(status_code=403, detail="Not your medication..")
+
+    prescription = session.get(Prescriptions, medication.prescription_id)
+    if prescription is None or prescription.dispense_status != DispenseStatus.collected:
+        raise HTTPException(
+            status_code=400, detail="This medication has not been collected yet."
+        )
 
     log = _today_log(session, schedule_id)
     now = datetime.now(timezone.utc)

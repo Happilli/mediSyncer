@@ -6,12 +6,14 @@ from sqlmodel import Session, select
 from models.appointments import Appointments, AppointmentStatus
 from models.consultations import Consultations
 from models.doctors import Doctors
+from models.hospitals import Hospitals
 from models.medication_times import MedicationTimes
 from models.medications import Medications
 from models.notifications import NotificationType
 from models.patients import Patients
-from models.prescriptions import Prescriptions
+from models.prescriptions import DispenseStatus, Prescriptions
 from schemas.prescription import (
+    DispenseQueueItemOut,
     MedicationOut,
     PrescriptionCreate,
     PrescriptionDetailOut,
@@ -41,8 +43,10 @@ def _to_detail(
         doctor_id=prescription.doctor_id,
         appointment_id=prescription.appointment_id,
         patient_id=prescription.patient_id,
+        hospital_id=prescription.hospital_id,
         diagnosis=prescription.diagnosis,
         instructions=prescription.instructions,
+        dispense_status=prescription.dispense_status,
         created_at=prescription.created_at,
         follow_up_date=prescription.follow_up_date,
         medications=all_meds,
@@ -78,13 +82,19 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
             detail="A Prescription already exists btw.",
         )
 
+    dispense_status = (
+        DispenseStatus.pending if data.medications else DispenseStatus.not_required
+    )
+
     prescription = Prescriptions(
         doctor_id=doctor.id,
         appointment_id=data.appointment_id,
         patient_id=appt.patient_id,
+        hospital_id=appt.hospital_id,
         diagnosis=data.diagnosis,
         instructions=data.instructions,
         follow_up_date=data.follow_up_date,
+        dispense_status=dispense_status,
     )
 
     session.add(prescription)
@@ -127,20 +137,22 @@ def create_prescription(data: PrescriptionCreate, doctor: Doctors, session: Sess
             patient.user_id,
             NotificationType.prescription_created,
             "New prescription",
-            f"Dr. {doctor.name} issued you a nwe prescription.",
+            f"Dr. {doctor.name} issued you a new prescription.",
             related_id=prescription.id,
             related_type="prescription",
         )
 
-    notify_hospital(
-        session,
-        appt.hospital_id,
-        NotificationType.prescription_created,
-        "New prescription issued",
-        f"Dr. {doctor.name} issued a prescription for {patient.name if patient else 'a patient'}.",
-        related_id=prescription.id,
-        related_type="prescription",
-    )
+    if dispense_status == DispenseStatus.pending:
+        med_names = ", ".join(m.name for m in medications)
+        notify_hospital(
+            session,
+            appt.hospital_id,
+            NotificationType.prescription_pending_dispense,
+            "New medicines to prepare",
+            f"{patient.name if patient else 'A patient'} needs: {med_names}",
+            related_id=prescription.id,
+            related_type="prescription",
+        )
 
     return _to_detail(prescription, medications, session)
 
@@ -177,6 +189,12 @@ def get_prescription_detail(
         ).first()
         if doctor is None or prescription.doctor_id != doctor.id:
             raise HTTPException(status_code=403, detail="Not your prescription.")
+    elif current_role == "hospital":
+        hospital = session.exec(
+            select(Hospitals).where(Hospitals.user_id == current_user_id)
+        ).first()
+        if hospital is None or prescription.hospital_id != hospital.id:
+            raise HTTPException(status_code=403, detail="Not your prescription.")
     else:
         raise HTTPException(status_code=403, detail="Not authorized.")
 
@@ -184,3 +202,102 @@ def get_prescription_detail(
         select(Medications).where(Medications.prescription_id == prescription_id)
     ).all()
     return _to_detail(prescription, medications, session)
+
+
+def get_dispense_queue(
+    hospital_id: int, session: Session
+) -> list[DispenseQueueItemOut]:
+    results = session.exec(
+        select(Prescriptions, Patients)
+        .join(Patients, Patients.id == Prescriptions.patient_id)
+        .where(
+            Prescriptions.hospital_id == hospital_id,
+            Prescriptions.dispense_status == DispenseStatus.pending,
+        )
+        .order_by(Prescriptions.created_at)
+    ).all()
+
+    items = []
+    for prescription, patient in results:
+        meds = session.exec(
+            select(Medications).where(Medications.prescription_id == prescription.id)
+        ).all()
+        items.append(
+            DispenseQueueItemOut(
+                prescription_id=prescription.id,
+                patient_name=patient.name,
+                medicine_names=[m.name for m in meds],
+                created_at=prescription.created_at,
+            )
+        )
+    return items
+
+
+def mark_prescription_ready(prescription_id: int, hospital_id: int, session: Session):
+    prescription = session.get(Prescriptions, prescription_id)
+    if prescription is None:
+        raise HTTPException(status_code=404, detail="Prescription not found..")
+    if prescription.hospital_id != hospital_id:
+        raise HTTPException(status_code=403, detail="Not your prescription.")
+    if prescription.dispense_status != DispenseStatus.pending:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Prescription is {prescription.dispense_status.value}, cannot mark ready.",
+        )
+
+    prescription.dispense_status = DispenseStatus.ready
+    session.add(prescription)
+    session.commit()
+    session.refresh(prescription)
+
+    patient = session.get(Patients, prescription.patient_id)
+    if patient is not None:
+        create_notification(
+            session,
+            patient.user_id,
+            NotificationType.prescription_ready,
+            "Prescription ready",
+            "Your medicines are ready for collection.",
+            related_id=prescription.id,
+            related_type="prescription",
+        )
+
+    return prescription
+
+
+def confirm_collection(prescription_id: int, patient: Patients, session: Session):
+    prescription = session.get(Prescriptions, prescription_id)
+    if prescription is None:
+        raise HTTPException(status_code=404, detail="Prescription not found..")
+    if prescription.patient_id != patient.id:
+        raise HTTPException(status_code=403, detail="Not your prescription.")
+    if prescription.dispense_status != DispenseStatus.ready:
+        raise HTTPException(
+            status_code=400, detail="Prescription is not ready for collection yet."
+        )
+
+    prescription.dispense_status = DispenseStatus.collected
+    session.add(prescription)
+
+    medications = session.exec(
+        select(Medications).where(Medications.prescription_id == prescription_id)
+    ).all()
+    today = date.today()
+    for med in medications:
+        med.start_date = today
+        session.add(med)
+
+    session.commit()
+    session.refresh(prescription)
+
+    notify_hospital(
+        session,
+        prescription.hospital_id,
+        NotificationType.prescription_collected,
+        "Prescription collected",
+        f"{patient.name} collected their prescription.",
+        related_id=prescription.id,
+        related_type="prescription",
+    )
+
+    return prescription

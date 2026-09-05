@@ -2,6 +2,8 @@ from datetime import date, datetime, time
 
 from pydantic import BaseModel, field_validator
 
+from models.prescriptions import DispenseStatus
+
 
 class MedicationTimeCreate(BaseModel):
     dosage_time: time
@@ -35,8 +37,8 @@ class MedicationOut(BaseModel):
     label: str | None = None
     frequency_per_day: int
     duration_days: int
-    start_date: date
-    end_date: date
+    start_date: date | None = None
+    end_date: date | None = None
     is_taken: bool
     taken_at: datetime | None = None
     is_active: bool
@@ -60,8 +62,10 @@ class PrescriptionOut(BaseModel):
     doctor_id: int
     appointment_id: int
     patient_id: int
+    hospital_id: int
     diagnosis: str
     instructions: str
+    dispense_status: DispenseStatus
     created_at: datetime
     follow_up_date: datetime | None = None
 
@@ -71,3 +75,10 @@ class PrescriptionOut(BaseModel):
 
 class PrescriptionDetailOut(PrescriptionOut):
     medications: list[MedicationOut] = []
+
+
+class DispenseQueueItemOut(BaseModel):
+    prescription_id: int
+    patient_name: str
+    medicine_names: list[str]
+    created_at: datetime

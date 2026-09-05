@@ -1,5 +1,4 @@
 from datetime import date as dihh
-from datetime import datetime, time
 from typing import Optional
 
 from sqlmodel import Column, Field, ForeignKey, Integer, SQLModel
@@ -17,4 +16,4 @@ class Medications(SQLModel, table=True):
     dosage: str
     instruction: str
     duration_days: int = Field(ge=1)
-    start_date: dihh = Field(default_factory=dihh.today)
+    start_date: Optional[dihh] = Field(default=None)
