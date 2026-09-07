@@ -17,6 +17,7 @@ from schemas.doctor import (
     TimeSlotCreate,
     TimeSlotOut,
 )
+from schemas.doctor_stats import DoctorStatsOut
 from services.doctor_service import (
     create_timeslot,
     delete_doctor_admin,
@@ -32,6 +33,7 @@ from services.doctor_service import (
     update_doctor_profile_pic,
     update_doctor_security_answer,
 )
+from services.doctor_stats_service import get_doctor_stats
 from utils.dependencies import (
     get_current_user,
     get_own_doctor_profile,
@@ -122,6 +124,14 @@ def update_my_doctor_profile(
         data,
         session,
     )
+
+
+@router.get("/me/stats", response_model=DoctorStatsOut)
+def my_doctor_stats(
+    doctor: Doctors = Depends(get_own_doctor_profile),
+    session: Session = Depends(get_session),
+):
+    return get_doctor_stats(doctor, session)
 
 
 @router.post(

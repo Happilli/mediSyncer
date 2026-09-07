@@ -13,6 +13,7 @@ from schemas.patient import (
     PatientSecurityAnswerUpdate,
     PatientUpdate,
 )
+from schemas.patient_stats import PatientStatsOut
 from services.patient_service import (
     delete_patient,
     get_patient_admin,
@@ -28,6 +29,7 @@ from services.patient_service import (
     update_patient_security_answer,
     verify_patient,
 )
+from services.patient_stats_service import get_patient_stats
 from utils.dependencies import (
     get_current_user,
     get_own_patient_profile,
@@ -157,3 +159,11 @@ def update_my_security_answer(
     current_user: Users = Depends(get_current_user),
 ):
     return update_patient_security_answer(patient, current_user, data, session)
+
+
+@router.get("/me/stats", response_model=PatientStatsOut)
+def my_patient_stats(
+    session: Session = Depends(get_session),
+    patient: Patients = Depends(get_own_patient_profile),
+):
+    return get_patient_stats(patient, session)
