@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from sqlmodel import Session, col, select
 
@@ -13,6 +13,19 @@ def _as_aware(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+def _last_n_months_keys(n: int) -> list[str]:
+    now = datetime.now(timezone.utc)
+    keys = []
+    y, m = now.year, now.month
+    for _ in range(n):
+        keys.append(f"{y:04d}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    return list(reversed(keys))
 
 
 def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
@@ -39,15 +52,8 @@ def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
         ]
     )
 
-    six_months_ago = (month_start - timedelta(days=180)).replace(day=1)
-    monthly_counts: dict[str, int] = {}
-    cursor = six_months_ago
-    for _ in range(6):
-        monthly_counts[cursor.strftime("%Y-%m")] = 0
-        if cursor.month == 12:
-            cursor = cursor.replace(year=cursor.year + 1, month=1)
-        else:
-            cursor = cursor.replace(month=cursor.month + 1)
+    month_keys = _last_n_months_keys(6)
+    monthly_counts = {k: 0 for k in month_keys}
 
     for a in appointments:
         key = _as_aware(a.appointment_at).strftime("%Y-%m")
@@ -55,7 +61,7 @@ def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
             monthly_counts[key] += 1
 
     appointments_last_6_months = [
-        MonthlyAppointmentCount(month=k, count=v) for k, v in monthly_counts.items()
+        MonthlyAppointmentCount(month=k, count=monthly_counts[k]) for k in month_keys
     ]
 
     real_patient_statuses = [AppointmentStatus.confirmed, AppointmentStatus.completed]
