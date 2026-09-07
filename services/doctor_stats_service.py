@@ -9,6 +9,12 @@ from models.prescriptions import Prescriptions
 from schemas.doctor_stats import DoctorStatsOut, MonthlyAppointmentCount
 
 
+def _as_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -29,7 +35,7 @@ def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
             a
             for a in appointments
             if a.status in (AppointmentStatus.pending, AppointmentStatus.confirmed)
-            and a.appointment_at >= now
+            and _as_aware(a.appointment_at) >= now
         ]
     )
 
@@ -44,7 +50,7 @@ def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
             cursor = cursor.replace(month=cursor.month + 1)
 
     for a in appointments:
-        key = a.appointment_at.strftime("%Y-%m")
+        key = _as_aware(a.appointment_at).strftime("%Y-%m")
         if key in monthly_counts:
             monthly_counts[key] += 1
 
@@ -62,7 +68,8 @@ def get_doctor_stats(doctor: Doctors, session: Session) -> DoctorStatsOut:
         set(
             a.patient_id
             for a in appointments
-            if a.status in real_patient_statuses and a.appointment_at >= month_start
+            if a.status in real_patient_statuses
+            and _as_aware(a.appointment_at) >= month_start
         )
     )
 
