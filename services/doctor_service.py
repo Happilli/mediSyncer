@@ -249,7 +249,7 @@ def get_my_profile(doctor: Doctors, session: Session):
     ).all()
 
     return {
-        **doctor.model_dump(),
+        "doctor": doctor,
         "patients_this_month": len(patients_this_month),
         "total_patients": len(total_patients),
         "has_security_answer": doctor.security_answer_hash is not None,

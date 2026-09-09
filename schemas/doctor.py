@@ -76,7 +76,8 @@ class DoctorAdminOut(DoctorOut):
     license_photo_url: str | None = None
 
 
-class DoctorProfileOut(DoctorOut):
+class DoctorProfileOut(BaseModel):
+    doctor: DoctorOut
     patients_this_month: int
     total_patients: int
     has_security_answer: bool = False
